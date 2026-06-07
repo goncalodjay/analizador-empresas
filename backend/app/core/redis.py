@@ -1,4 +1,4 @@
-﻿import aioredis
+import aioredis
 from app.core.config import settings
 
 

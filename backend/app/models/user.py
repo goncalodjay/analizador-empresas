@@ -1,4 +1,4 @@
-﻿import uuid
+import uuid
 from datetime import datetime, time
 
 from sqlalchemy import String, Boolean, DateTime, Time, func
