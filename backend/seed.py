@@ -24,7 +24,7 @@ from app.services.user_service import get_user_by_email
 from app.services.portfolio_service import create_position
 from app.services.watchlist_service import create_watchlist, add_ticker
 
-DEMO_EMAIL = "demo@analyzer.local"
+DEMO_EMAIL = "demo@analyzer.dev"
 DEMO_PASSWORD = "demopass123"
 
 POSITIONS = [
