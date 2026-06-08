@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import auth, health, portfolio, watchlists
+from app.api import auth, health, ingestion, portfolio, watchlists
 
 
 @asynccontextmanager
@@ -29,4 +29,5 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(portfolio.router)
 app.include_router(watchlists.router)
+app.include_router(ingestion.router)
 app.include_router(health.router)

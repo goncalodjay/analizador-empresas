@@ -1,8 +1,6 @@
 from datetime import date, datetime, timezone
 from decimal import Decimal, InvalidOperation
 
-import yfinance as yf
-
 from app.providers.base import AbstractMarketDataProvider
 from app.schemas.ingestion import (
     NormalizedCompanyInfo,
@@ -16,8 +14,13 @@ class YFinanceProvider(AbstractMarketDataProvider):
     name = "yfinance"
     requires_api_key = False
 
+    @staticmethod
+    def _get_ticker(ticker: str):
+        import yfinance as yf
+        return yf.Ticker(ticker)
+
     async def fetch_price(self, ticker: str) -> NormalizedPriceData:
-        t = yf.Ticker(ticker)
+        t = self._get_ticker(ticker)
         hist = t.history(period="1d")
         now = datetime.now(timezone.utc)
 
@@ -40,7 +43,7 @@ class YFinanceProvider(AbstractMarketDataProvider):
     async def fetch_fundamentals(
         self, ticker: str
     ) -> NormalizedFundamentals:
-        t = yf.Ticker(ticker)
+        t = self._get_ticker(ticker)
         info = t.info or {}
         now = datetime.now(timezone.utc)
 
@@ -60,7 +63,7 @@ class YFinanceProvider(AbstractMarketDataProvider):
     async def fetch_dividends(
         self, ticker: str
     ) -> list[NormalizedDividend]:
-        t = yf.Ticker(ticker)
+        t = self._get_ticker(ticker)
         div_history = t.dividends
         info = t.info or {}
         now = datetime.now(timezone.utc)
@@ -88,7 +91,7 @@ class YFinanceProvider(AbstractMarketDataProvider):
     async def fetch_company_info(
         self, ticker: str
     ) -> NormalizedCompanyInfo:
-        t = yf.Ticker(ticker)
+        t = self._get_ticker(ticker)
         info = t.info or {}
         now = datetime.now(timezone.utc)
 

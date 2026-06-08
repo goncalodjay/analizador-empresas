@@ -1,3 +1,5 @@
+import asyncio
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,6 +12,7 @@ from app.schemas.portfolio import (
     PortfolioPositionUpdate,
 )
 from app.services import portfolio_service
+from app.services.ingestion_service import IngestionService
 
 router = APIRouter(prefix="/portfolio", tags=["portfolio"])
 
@@ -36,6 +39,11 @@ async def create_position(
     try:
         position = await portfolio_service.create_position(
             db, str(current_user.id), payload
+        )
+        asyncio.create_task(
+            IngestionService().ingest_ticker(
+                position.ticker, str(current_user.id)
+            )
         )
     except IntegrityError:
         await db.rollback()
