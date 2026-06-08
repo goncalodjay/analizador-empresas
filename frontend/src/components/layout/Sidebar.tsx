@@ -6,6 +6,7 @@ import { useState } from 'react';
 const navItems = [
   { href: '/dashboard', label: 'Dashboard' },
   { href: '/portfolio', label: 'Portfolio' },
+  { href: '/watchlists', label: 'Watchlists' },
   { href: '/strategy', label: 'Strategy' },
   { href: '/analysis', label: 'Analysis' },
   { href: '/settings', label: 'Settings' },
@@ -37,7 +38,7 @@ export function Sidebar() {
               key={item.href}
               href={item.href}
               className={`block px-6 py-3 text-sm transition-colors hover:bg-gray-700 ${
-                pathname === item.href ? 'bg-gray-700 font-medium' : ''
+                pathname.startsWith(item.href) ? 'bg-gray-700 font-medium' : ''
               }`}
             >
               {item.label}
