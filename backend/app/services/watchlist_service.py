@@ -1,3 +1,5 @@
+import uuid
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -6,10 +8,14 @@ from app.models.portfolio import Watchlist, WatchlistTicker
 from app.schemas.watchlist import WatchlistCreate, WatchlistUpdate
 
 
+def _to_uuid(value: str) -> uuid.UUID:
+    return uuid.UUID(value)
+
+
 async def get_watchlists(db: AsyncSession, user_id: str) -> list[Watchlist]:
     result = await db.execute(
         select(Watchlist)
-        .where(Watchlist.user_id == user_id)
+        .where(Watchlist.user_id == _to_uuid(user_id))
         .options(selectinload(Watchlist.tickers))
         .order_by(Watchlist.created_at.desc())
     )
@@ -22,8 +28,8 @@ async def get_watchlist(
     result = await db.execute(
         select(Watchlist)
         .where(
-            Watchlist.id == watchlist_id,
-            Watchlist.user_id == user_id,
+            Watchlist.id == _to_uuid(watchlist_id),
+            Watchlist.user_id == _to_uuid(user_id),
         )
         .options(selectinload(Watchlist.tickers))
     )
@@ -34,14 +40,20 @@ async def create_watchlist(
     db: AsyncSession, user_id: str, payload: WatchlistCreate
 ) -> Watchlist:
     watchlist = Watchlist(
-        user_id=user_id,
+        user_id=_to_uuid(user_id),
         name=payload.name,
         description=payload.description,
     )
     db.add(watchlist)
     await db.commit()
     await db.refresh(watchlist)
-    return watchlist
+
+    result = await db.execute(
+        select(Watchlist)
+        .options(selectinload(Watchlist.tickers))
+        .where(Watchlist.id == watchlist.id)
+    )
+    return result.scalar_one()
 
 
 async def update_watchlist(
@@ -56,8 +68,13 @@ async def update_watchlist(
         setattr(watchlist, field, value)
 
     await db.commit()
-    await db.refresh(watchlist)
-    return watchlist
+
+    result = await db.execute(
+        select(Watchlist)
+        .options(selectinload(Watchlist.tickers))
+        .where(Watchlist.id == _to_uuid(watchlist_id))
+    )
+    return result.scalar_one()
 
 
 async def delete_watchlist(
@@ -87,7 +104,7 @@ async def add_ticker(
         return watchlist
 
     watchlist_ticker = WatchlistTicker(
-        watchlist_id=watchlist_id,
+        watchlist_id=_to_uuid(watchlist_id),
         ticker=ticker_upper,
     )
     db.add(watchlist_ticker)

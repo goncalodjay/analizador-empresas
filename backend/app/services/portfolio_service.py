@@ -1,3 +1,5 @@
+import uuid
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -8,7 +10,7 @@ from app.schemas.portfolio import PortfolioPositionCreate, PortfolioPositionUpda
 async def get_positions(db: AsyncSession, user_id: str) -> list[PortfolioPosition]:
     result = await db.execute(
         select(PortfolioPosition)
-        .where(PortfolioPosition.user_id == user_id)
+        .where(PortfolioPosition.user_id == uuid.UUID(user_id))
         .order_by(PortfolioPosition.created_at.desc())
     )
     return list(result.scalars().all())
@@ -19,8 +21,8 @@ async def get_position(
 ) -> PortfolioPosition | None:
     result = await db.execute(
         select(PortfolioPosition).where(
-            PortfolioPosition.id == position_id,
-            PortfolioPosition.user_id == user_id,
+            PortfolioPosition.id == uuid.UUID(position_id),
+            PortfolioPosition.user_id == uuid.UUID(user_id),
         )
     )
     return result.scalar_one_or_none()
@@ -30,7 +32,7 @@ async def create_position(
     db: AsyncSession, user_id: str, payload: PortfolioPositionCreate
 ) -> PortfolioPosition:
     position = PortfolioPosition(
-        user_id=user_id,
+        user_id=uuid.UUID(user_id),
         ticker=payload.ticker.upper(),
         shares=payload.shares,
         avg_buy_price=payload.avg_buy_price,
