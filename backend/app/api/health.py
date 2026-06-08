@@ -3,7 +3,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.redis import RedisClient
+from app.core.redis import ping_redis
 
 router = APIRouter()
 
@@ -16,7 +16,7 @@ async def health_check(db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=503, detail=f"Database unhealthy: {e}")
 
     try:
-        await RedisClient.ping()
+        await ping_redis()
     except Exception as e:
         raise HTTPException(status_code=503, detail=f"Redis unhealthy: {e}")
 

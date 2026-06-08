@@ -16,4 +16,5 @@ python-dotenv==1.0.1
 passlib==1.7.4
 
 pgvector==0.2.5
+aiosqlite==0.20.0
 

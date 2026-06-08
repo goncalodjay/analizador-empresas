@@ -13,7 +13,7 @@ from alembic import context
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 from app.core.config import settings
-from app.core.database import Base
+from app.core.base import Base
 
 # this is the Alembic Config object
 config = context.config

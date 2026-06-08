@@ -4,7 +4,7 @@ from datetime import datetime, time
 from sqlalchemy import String, Boolean, DateTime, Time, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.core.database import Base
+from app.core.base import Base
 
 
 class User(Base):
@@ -18,7 +18,7 @@ class User(Base):
     timezone: Mapped[str] = mapped_column(
         String, default="America/Argentina/Buenos_Aires"
     )
-    digest_time: Mapped[time] = mapped_column(Time, default="06:00:00")
+    digest_time: Mapped[time] = mapped_column(Time, default=time(6, 0))
     risk_tolerance: Mapped[str] = mapped_column(String, default="moderate")
     email_notifications: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(

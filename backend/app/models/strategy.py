@@ -1,10 +1,10 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import String, Boolean, JSON, ForeignKey, func
+from sqlalchemy import DateTime, String, Boolean, JSON, ForeignKey, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.core.database import Base
+from app.core.base import Base
 
 
 class InvestmentStrategy(Base):

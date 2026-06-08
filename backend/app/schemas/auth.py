@@ -1,4 +1,6 @@
-from pydantic import BaseModel, EmailStr, Field
+import uuid
+
+from pydantic import BaseModel, EmailStr, Field, field_serializer
 
 
 class UserCreate(BaseModel):
@@ -17,10 +19,14 @@ class TokenResponse(BaseModel):
 
 
 class UserOut(BaseModel):
-    id: str
+    id: uuid.UUID
     email: str
     timezone: str
     risk_tolerance: str
     email_notifications: bool
 
     model_config = {"from_attributes": True}
+
+    @field_serializer("id")
+    def serialize_id(self, value: uuid.UUID) -> str:
+        return str(value)

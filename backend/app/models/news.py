@@ -5,7 +5,7 @@ from sqlalchemy import String, Numeric, DateTime, func
 from sqlalchemy.orm import Mapped, mapped_column
 from pgvector.sqlalchemy import Vector
 
-from app.core.database import Base
+from app.core.base import Base
 
 
 class NewsItem(Base):

@@ -4,7 +4,7 @@ from datetime import datetime, date
 from sqlalchemy import String, Numeric, Integer, DateTime, Date, JSON, ForeignKey, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.core.database import Base
+from app.core.base import Base
 
 
 class BacktestResult(Base):

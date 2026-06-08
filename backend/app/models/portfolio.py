@@ -1,10 +1,10 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import String, Numeric, ForeignKey, UniqueConstraint, func
+from sqlalchemy import DateTime, String, Numeric, ForeignKey, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.core.database import Base
+from app.core.base import Base
 
 
 class PortfolioPosition(Base):
