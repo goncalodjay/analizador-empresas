@@ -18,5 +18,9 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
+    FINNHUB_API_KEY: str = ""
+    ALPHA_VANTAGE_API_KEY: str = ""
+    NEWSAPI_API_KEY: str = ""
+
 
 settings = Settings()
