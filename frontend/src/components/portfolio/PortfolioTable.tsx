@@ -53,7 +53,11 @@ export function PortfolioTable({ positions, onDelete }: PortfolioTableProps) {
         <tbody>
           {positions.map((pos) => (
             <tr key={pos.id} className="border-b hover:bg-gray-50">
-              <td className="px-4 py-3 font-medium">{pos.ticker}</td>
+              <td className="px-4 py-3 font-medium">
+                <Link href={`/analysis/${pos.ticker}`} className="text-blue-600 hover:text-blue-800 hover:underline">
+                  {pos.ticker}
+                </Link>
+              </td>
               <td className="px-4 py-3">{Number(pos.shares).toLocaleString()}</td>
               <td className="px-4 py-3">${Number(pos.avg_buy_price).toFixed(2)}</td>
               <td className="px-4 py-3 text-gray-500">{pos.sector || '—'}</td>
