@@ -70,3 +70,26 @@
 - Add TechnicalPanel below fundamentals
 - Integrate RsiGauge and MacdSummary
 - **Verification:** Next.js build, all sections render
+
+---
+
+## Fix batch (post-verify)
+
+### Fix W1 — EMA % distance (R4.2)
+**Status:** [x] done — commit 7b3eaba
+- Extended `EmaData` with `price_vs_ema_21`, `price_vs_ema_50`, and `pct_distance_ema_{9,21,50,200}`
+- `_compute_ema()` computes `(price - ema) / ema * 100` for each period
+- `TechnicalPanel.tsx` renders all four EMAs with direction + % distance
+- 2 new tests added; deterministic golden-cross test replaces skip fallback
+
+### Fix W2 — Persist technical signals (R7.3)
+**Status:** [x] done — commit c86caca
+- `TechnicalSignal` ORM model and `technical_signals` table were already in `0001_initial_schema.py`
+- Added `persist_technical_signal()` in `technical_service.py`
+- Wired non-blocking persistence in `GET /analysis/{ticker}`; failure logs and does not break response
+
+### Fix S1 — Remove dead widgetRef
+**Status:** [x] done (included in commit 7b3eaba)
+
+### Fix S2 — Deterministic golden-cross test
+**Status:** [x] done (included in commit 7b3eaba)
