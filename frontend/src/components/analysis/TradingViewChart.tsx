@@ -20,7 +20,6 @@ export function TradingViewChart({
   interval = 'D',
 }: TradingViewChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const widgetRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const container = containerRef.current;

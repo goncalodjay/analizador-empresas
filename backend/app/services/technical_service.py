@@ -1,7 +1,9 @@
 from datetime import datetime, timezone
 from decimal import Decimal
+import logging
 
 import pandas as pd
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.schemas.analysis import (
     BollingerData,
@@ -12,6 +14,8 @@ from app.schemas.analysis import (
     RsiData,
     TechnicalIndicators,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def _compute_rsi(close: pd.Series, period: int = 14) -> RsiData:
@@ -106,7 +110,7 @@ def _compute_ema(close: pd.Series) -> EmaData:
     e200 = float(ema_200.iloc[-1])
 
     # Golden/death cross: EMA 50 crosses EMA 200
-    # Check if a crossover happened in the last 5 bars
+    # Check if a crossover happened in the last bar
     golden_cross = False
     death_cross = False
     if len(ema_50) >= 2 and len(ema_200) >= 2:
@@ -117,13 +121,24 @@ def _compute_ema(close: pd.Series) -> EmaData:
         elif prev_50 >= prev_200 and e50 < e200:
             death_cross = True
 
+    def _pct_distance(price: float, ema: float) -> Decimal:
+        if ema == 0:
+            return Decimal("0")
+        return Decimal(str(round((price - ema) / ema * 100, 4)))
+
     return EmaData(
         ema_9=Decimal(str(round(e9, 4))),
         ema_21=Decimal(str(round(e21, 4))),
         ema_50=Decimal(str(round(e50, 4))),
         ema_200=Decimal(str(round(e200, 4))),
         price_vs_ema_9="above" if current_price >= e9 else "below",
+        price_vs_ema_21="above" if current_price >= e21 else "below",
+        price_vs_ema_50="above" if current_price >= e50 else "below",
         price_vs_ema_200="above" if current_price >= e200 else "below",
+        pct_distance_ema_9=_pct_distance(current_price, e9),
+        pct_distance_ema_21=_pct_distance(current_price, e21),
+        pct_distance_ema_50=_pct_distance(current_price, e50),
+        pct_distance_ema_200=_pct_distance(current_price, e200),
         golden_cross=golden_cross,
         death_cross=death_cross,
     )
@@ -262,6 +277,70 @@ def compute_indicators(df: pd.DataFrame) -> TechnicalIndicators | None:
         source="yfinance",
         computed_at=datetime.now(timezone.utc),
     )
+
+
+async def persist_technical_signal(
+    db: AsyncSession, ticker: str, indicators: TechnicalIndicators
+) -> None:
+    """
+    Persist computed technical signals to the technical_signals table.
+    Import is deferred to avoid a hard dependency on SQLAlchemy models during
+    pure-compute unit tests.
+    """
+    from app.models.analysis import TechnicalSignal
+
+    try:
+        price = float(indicators.fifty_two_week.current) if indicators.fifty_two_week else None
+        week_52_high = float(indicators.fifty_two_week.high) if indicators.fifty_two_week else None
+        week_52_low = float(indicators.fifty_two_week.low) if indicators.fifty_two_week else None
+        rsi_14 = float(indicators.rsi.value) if indicators.rsi else None
+        macd_val = float(indicators.macd.macd_line) if indicators.macd else None
+        macd_signal = float(indicators.macd.signal_line) if indicators.macd else None
+        macd_hist = float(indicators.macd.histogram) if indicators.macd else None
+        ema_9 = float(indicators.ema.ema_9) if indicators.ema else None
+        ema_21 = float(indicators.ema.ema_21) if indicators.ema else None
+        ema_50 = float(indicators.ema.ema_50) if indicators.ema else None
+        ema_200 = float(indicators.ema.ema_200) if indicators.ema else None
+        bb_upper = float(indicators.bollinger.upper_band) if indicators.bollinger else None
+        bb_middle = float(indicators.bollinger.middle_band) if indicators.bollinger else None
+        bb_lower = float(indicators.bollinger.lower_band) if indicators.bollinger else None
+
+        signal_label = None
+        if indicators.ema:
+            if indicators.ema.golden_cross:
+                signal_label = "golden_cross"
+            elif indicators.ema.death_cross:
+                signal_label = "death_cross"
+        if signal_label is None and indicators.rsi:
+            if indicators.rsi.zone == "oversold":
+                signal_label = "oversold"
+            elif indicators.rsi.zone == "overbought":
+                signal_label = "overbought"
+
+        record = TechnicalSignal(
+            ticker=ticker,
+            source="yfinance",
+            price=price,
+            week_52_high=week_52_high,
+            week_52_low=week_52_low,
+            rsi_14=rsi_14,
+            macd=macd_val,
+            macd_signal=macd_signal,
+            macd_histogram=macd_hist,
+            ema_9=ema_9,
+            ema_21=ema_21,
+            ema_50=ema_50,
+            ema_200=ema_200,
+            bollinger_upper=bb_upper,
+            bollinger_middle=bb_middle,
+            bollinger_lower=bb_lower,
+            signal_label=signal_label,
+            raw_data=indicators.model_dump(mode="json"),
+        )
+        db.add(record)
+        await db.commit()
+    except Exception:
+        logger.exception("Failed to persist technical signal for %s — continuing without persistence", ticker)
 
 
 class TechnicalService:

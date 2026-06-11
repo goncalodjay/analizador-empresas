@@ -22,8 +22,14 @@ class EmaData(BaseModel):
     ema_21: Decimal
     ema_50: Decimal
     ema_200: Decimal
-    price_vs_ema_9: str  # "above" | "below"
+    price_vs_ema_9: str   # "above" | "below"
+    price_vs_ema_21: str  # "above" | "below"
+    price_vs_ema_50: str  # "above" | "below"
     price_vs_ema_200: str  # "above" | "below"
+    pct_distance_ema_9: Decimal    # (price - ema) / ema * 100
+    pct_distance_ema_21: Decimal
+    pct_distance_ema_50: Decimal
+    pct_distance_ema_200: Decimal
     golden_cross: bool
     death_cross: bool
 

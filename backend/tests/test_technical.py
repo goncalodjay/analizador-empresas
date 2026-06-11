@@ -171,44 +171,86 @@ def test_ema_structure():
     assert float(ema.ema_50) > 0
     assert float(ema.ema_200) > 0
     assert ema.price_vs_ema_9 in ("above", "below")
+    assert ema.price_vs_ema_21 in ("above", "below")
+    assert ema.price_vs_ema_50 in ("above", "below")
     assert ema.price_vs_ema_200 in ("above", "below")
     assert isinstance(ema.golden_cross, bool)
     assert isinstance(ema.death_cross, bool)
 
 
+def test_ema_pct_distance_all_four():
+    """All four EMA percentage distance fields are present and arithmetically correct."""
+    prices = [100 + i * 0.3 for i in range(210)]
+    close = _make_close(prices)
+    ema = _compute_ema(close)
+    current_price = float(close.iloc[-1])
+
+    for label, ema_val, pct_dist in [
+        ("ema_9",   float(ema.ema_9),   float(ema.pct_distance_ema_9)),
+        ("ema_21",  float(ema.ema_21),  float(ema.pct_distance_ema_21)),
+        ("ema_50",  float(ema.ema_50),  float(ema.pct_distance_ema_50)),
+        ("ema_200", float(ema.ema_200), float(ema.pct_distance_ema_200)),
+    ]:
+        expected = (current_price - ema_val) / ema_val * 100
+        assert abs(pct_dist - expected) < 0.01, f"pct_distance mismatch for {label}"
+
+
+def test_ema_pct_distance_sign_matches_direction():
+    """Positive % distance ↔ price above EMA; negative ↔ price below."""
+    prices = [100 + i * 0.3 for i in range(210)]
+    ema = _compute_ema(_make_close(prices))
+
+    pairs = [
+        (ema.price_vs_ema_9,   ema.pct_distance_ema_9),
+        (ema.price_vs_ema_21,  ema.pct_distance_ema_21),
+        (ema.price_vs_ema_50,  ema.pct_distance_ema_50),
+        (ema.price_vs_ema_200, ema.pct_distance_ema_200),
+    ]
+    for direction, pct in pairs:
+        if direction == "above":
+            assert float(pct) >= 0
+        else:
+            assert float(pct) <= 0
+
+
 def test_golden_cross_detected():
     """
-    Build a price series where EMA50 was just below EMA200 and crosses above.
-    Use a long downtrend followed by a very sharp, sustained rally so EMA50 > EMA200.
+    Build a deterministic price series where EMA50 crosses above EMA200
+    at the last bar transition.
+
+    Strategy: start with a long decline so EMA200 > EMA50, then append a
+    sharp multi-bar rally until exactly the penultimate bar has EMA50 <= EMA200
+    and the final bar has EMA50 > EMA200.
     """
-    # Long decline → EMA50 < EMA200
-    prices = [300.0 - i * 0.5 for i in range(250)]
-    # Sharp rally in last few bars to push EMA50 above EMA200
-    last = prices[-1]
-    for _ in range(60):
-        prices.append(last + 5)
-        last = prices[-1]
+    # Phase 1: long downtrend — EMA200 settles above EMA50
+    prices = [500.0 - i * 0.8 for i in range(400)]
 
-    close = _make_close(prices)
+    # Phase 2: keep appending a high price until the cross is one bar away,
+    # then add one final high bar to trigger the last-bar transition.
+    while True:
+        candidate = prices + [prices[-1] + 20.0]
+        c = _make_close(candidate)
+        e50 = c.ewm(span=50, adjust=False).mean()
+        e200 = c.ewm(span=200, adjust=False).mean()
+        prev_50 = float(e50.iloc[-2])
+        prev_200 = float(e200.iloc[-2])
+        last_50 = float(e50.iloc[-1])
+        last_200 = float(e200.iloc[-1])
 
-    import pandas as pd
-    ema_50 = close.ewm(span=50, adjust=False).mean()
-    ema_200 = close.ewm(span=200, adjust=False).mean()
-
-    # Find where cross actually happens (if at all)
-    crossed = False
-    for i in range(1, len(prices)):
-        if ema_50.iloc[i - 1] <= ema_200.iloc[i - 1] and ema_50.iloc[i] > ema_200.iloc[i]:
-            crossed = True
+        if prev_50 <= prev_200 and last_50 > last_200:
+            # Cross happens exactly at the last bar — stop here
+            prices = candidate
             break
+        if last_50 > last_200:
+            # Overshot: cross happened earlier; reset and try a gentler rally
+            prices = [500.0 - i * 0.8 for i in range(400)]
+            prices.extend([prices[-1] + 5.0] * 200)
+            break
+        prices = candidate
 
-    if crossed:
-        ema_data = _compute_ema(close)
-        # Either a cross was detected or it happened earlier in the series —
-        # the function only checks the last bar transition.
-        assert isinstance(ema_data.golden_cross, bool)
-    else:
-        pytest.skip("Price series did not produce a cross — test data needs adjustment")
+    ema_data = _compute_ema(_make_close(prices))
+    assert ema_data.golden_cross is True
+    assert ema_data.death_cross is False
 
 
 def test_death_cross_not_golden_cross_simultaneously():

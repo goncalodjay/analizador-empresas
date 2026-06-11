@@ -24,7 +24,13 @@ interface EmaData {
   ema_50: string;
   ema_200: string;
   price_vs_ema_9: 'above' | 'below';
+  price_vs_ema_21: 'above' | 'below';
+  price_vs_ema_50: 'above' | 'below';
   price_vs_ema_200: 'above' | 'below';
+  pct_distance_ema_9: string;
+  pct_distance_ema_21: string;
+  pct_distance_ema_50: string;
+  pct_distance_ema_200: string;
   golden_cross: boolean;
   death_cross: boolean;
 }
@@ -150,18 +156,25 @@ export function TechnicalPanel({ technical }: TechnicalPanelProps) {
                   </span>
                 )}
               </div>
-              <LabelValue label="EMA 9" value={`$${parseFloat(ema.ema_9).toFixed(2)}`} />
-              <LabelValue label="EMA 21" value={`$${parseFloat(ema.ema_21).toFixed(2)}`} />
-              <LabelValue label="EMA 50" value={`$${parseFloat(ema.ema_50).toFixed(2)}`} />
-              <LabelValue label="EMA 200" value={`$${parseFloat(ema.ema_200).toFixed(2)}`} />
-              <LabelValue
-                label="Price vs EMA 9"
-                value={ema.price_vs_ema_9.charAt(0).toUpperCase() + ema.price_vs_ema_9.slice(1)}
-              />
-              <LabelValue
-                label="Price vs EMA 200"
-                value={ema.price_vs_ema_200.charAt(0).toUpperCase() + ema.price_vs_ema_200.slice(1)}
-              />
+              {(
+                [
+                  { period: '9',   value: ema.ema_9,   dir: ema.price_vs_ema_9,   pct: ema.pct_distance_ema_9 },
+                  { period: '21',  value: ema.ema_21,  dir: ema.price_vs_ema_21,  pct: ema.pct_distance_ema_21 },
+                  { period: '50',  value: ema.ema_50,  dir: ema.price_vs_ema_50,  pct: ema.pct_distance_ema_50 },
+                  { period: '200', value: ema.ema_200, dir: ema.price_vs_ema_200, pct: ema.pct_distance_ema_200 },
+                ] as const
+              ).map(({ period, value, dir, pct }) => {
+                const pctNum = parseFloat(pct);
+                const pctLabel = `${pctNum >= 0 ? '+' : ''}${pctNum.toFixed(2)}%`;
+                const dirLabel = dir.charAt(0).toUpperCase() + dir.slice(1);
+                return (
+                  <LabelValue
+                    key={period}
+                    label={`EMA ${period}`}
+                    value={`$${parseFloat(value).toFixed(2)} · ${dirLabel} (${pctLabel})`}
+                  />
+                );
+              })}
             </div>
           )}
 
