@@ -5,6 +5,8 @@ import { apiFetch } from '@/lib/api';
 import { MetricCard } from '@/components/analysis/MetricCard';
 import { HealthScoreGauge } from '@/components/analysis/HealthScoreGauge';
 import { PeerRankingTable } from '@/components/analysis/PeerRankingTable';
+import { TradingViewChart } from '@/components/analysis/TradingViewChart';
+import { TechnicalPanel, TechnicalIndicators } from '@/components/analysis/TechnicalPanel';
 import { DataFreshnessTag } from '@/components/layout/DataFreshnessTag';
 
 interface AnalysisData {
@@ -24,6 +26,7 @@ interface AnalysisData {
     top_drivers: string[];
   } | null;
   peers: { ticker: string; peers: any[]; rankings: Record<string, number> } | null;
+  technical: TechnicalIndicators | null;
   cached_at: string | null;
 }
 
@@ -56,6 +59,11 @@ export default function AnalysisPage() {
 
   return (
     <div className="p-6">
+      {/* TradingView Chart */}
+      <div className="mb-6">
+        <TradingViewChart ticker={ticker} />
+      </div>
+
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
@@ -112,6 +120,12 @@ export default function AnalysisPage() {
             peers={data.peers.peers}
             rankings={data.peers.rankings}
           />
+        </div>
+      )}
+
+      {data.technical && (
+        <div className="mb-6">
+          <TechnicalPanel technical={data.technical} />
         </div>
       )}
     </div>
