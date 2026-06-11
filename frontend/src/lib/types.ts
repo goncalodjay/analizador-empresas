@@ -120,3 +120,23 @@ export interface StrategyUpdate {
   description?: string;
   rules?: StrategyRules;
 }
+
+// --- News Feed (Deliverable 7) ---
+
+export interface NewsItemOut {
+  headline: string;
+  summary: string | null;
+  source_name: string;
+  url: string | null;
+  published_at: string | null;
+}
+
+export interface NewsFeedResponse {
+  ticker: string;
+  available: boolean;
+  source: string | null;
+  items: NewsItemOut[];
+  cached_at: string | null;
+  freshness: 'live' | 'stale' | null;
+  count: number;
+}
