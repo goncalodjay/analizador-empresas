@@ -191,7 +191,7 @@ suite (`pytest backend/`) passes with all existing tests still green (≥81 pass
 _Can be branched from 6a after merge, or prepared in parallel and wired once 6a is deployed._
 _Tasks within this PR are sequential._
 
-### Task 6b.1 — `lib/types.ts` — Strategy type additions
+### [x] Task 6b.1 — `lib/types.ts` — Strategy type additions
 **Files:** `frontend/src/lib/types.ts` (MODIFY)
 
 Append the following exports (do not disturb existing types):
@@ -212,7 +212,7 @@ Append the following exports (do not disturb existing types):
 
 ---
 
-### Task 6b.2 — `lib/api.ts` — Strategy API client functions
+### [x] Task 6b.2 — `lib/api.ts` — Strategy API client functions
 **Files:** `frontend/src/lib/api.ts` (MODIFY)
 
 Add the 7 strategy functions (follow existing `apiFetch<T>` pattern):
@@ -235,7 +235,7 @@ existing error-handling pattern in the file).
 
 ---
 
-### Task 6b.3 — `components/strategy/ActiveToggle.tsx`
+### [x] Task 6b.3 — `components/strategy/ActiveToggle.tsx`
 **Files:** `frontend/src/components/strategy/ActiveToggle.tsx` (NEW)
 
 Presentational + wired toggle switch:
@@ -254,7 +254,7 @@ without navigation
 
 ---
 
-### Task 6b.4 — `components/strategy/PrimaryToggle.tsx`
+### [x] Task 6b.4 — `components/strategy/PrimaryToggle.tsx`
 **Files:** `frontend/src/components/strategy/PrimaryToggle.tsx` (NEW)
 
 Presentational + wired "Set as Primary" button:
@@ -274,7 +274,7 @@ PATCH and propagates result to parent
 
 ---
 
-### Task 6b.5 — `components/strategy/StrategyRulesEditor.tsx`
+### [x] Task 6b.5 — `components/strategy/StrategyRulesEditor.tsx`
 **Files:** `frontend/src/components/strategy/StrategyRulesEditor.tsx` (NEW)
 
 Typed, controlled form section for `StrategyRules`:
@@ -296,7 +296,7 @@ Typed, controlled form section for `StrategyRules`:
 
 ---
 
-### Task 6b.6 — `components/strategy/StrategyCard.tsx`
+### [x] Task 6b.6 — `components/strategy/StrategyCard.tsx`
 **Files:** `frontend/src/components/strategy/StrategyCard.tsx` (NEW)
 
 Presentational card (mirrors `WatchlistCard` structure):
@@ -316,7 +316,7 @@ Presentational card (mirrors `WatchlistCard` structure):
 
 ---
 
-### Task 6b.7 — `components/strategy/StrategyForm.tsx`
+### [x] Task 6b.7 — `components/strategy/StrategyForm.tsx`
 **Files:** `frontend/src/components/strategy/StrategyForm.tsx` (NEW)
 
 Controlled form for create and edit modes:
@@ -338,7 +338,7 @@ shows as badge, not input
 
 ---
 
-### Task 6b.8 — `app/strategy/page.tsx` — List page
+### [x] Task 6b.8 — `app/strategy/page.tsx` — List page
 **Files:** `frontend/src/app/strategy/page.tsx` (NEW)
 
 - Client component (`'use client'`)
@@ -357,7 +357,7 @@ a card updates it without navigation
 
 ---
 
-### Task 6b.9 — `app/strategy/new/page.tsx` — Create page
+### [x] Task 6b.9 — `app/strategy/new/page.tsx` — Create page
 **Files:** `frontend/src/app/strategy/new/page.tsx` (NEW)
 
 - Renders `<StrategyForm mode="create" onSuccess={router.push('/strategy')} />`
@@ -371,7 +371,7 @@ redirects to the list
 
 ---
 
-### Task 6b.10 — `app/strategy/[id]/page.tsx` — Detail / Edit page
+### [x] Task 6b.10 — `app/strategy/[id]/page.tsx` — Detail / Edit page
 **Files:** `frontend/src/app/strategy/[id]/page.tsx` (NEW)
 
 - On mount: calls `getStrategy(id)` from params
@@ -388,7 +388,7 @@ pre-filled; navigating to a bad ID renders the 404 state
 
 ---
 
-### Task 6b.11 — Final build verification
+### [x] Task 6b.11 — Final build verification
 **Files:** none (verification only)
 
 Run `next build` from `frontend/` and confirm:
