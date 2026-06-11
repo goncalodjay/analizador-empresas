@@ -8,6 +8,7 @@ from app.schemas.analysis import AnalysisResponse
 from app.services.fundamental_service import FundamentalService
 from app.services.health_score import HealthScoreEngine
 from app.services.peer_comparison import PeerComparisonService
+from app.services.technical_service import TechnicalService
 
 router = APIRouter(prefix="/analysis", tags=["analysis"])
 
@@ -29,6 +30,9 @@ async def analyze_ticker(
 
     health_engine = HealthScoreEngine()
     health = await health_engine.compute(ticker_upper)
+
+    technical_service = TechnicalService()
+    technical = await technical_service.compute(ticker_upper)
 
     peers_service = PeerComparisonService()
     sector = metrics.pe_trailing.source if metrics.pe_trailing else None
@@ -52,5 +56,6 @@ async def analyze_ticker(
         analysts=analysts,
         peers=peers,
         health_score=health,
+        technical=technical,
         cached_at=datetime.now(timezone.utc),
     )
