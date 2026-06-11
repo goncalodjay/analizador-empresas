@@ -1,4 +1,4 @@
-import type { Strategy, StrategyCreate, StrategyUpdate } from '@/lib/types';
+import type { NewsFeedResponse, Strategy, StrategyCreate, StrategyUpdate } from '@/lib/types';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -71,4 +71,10 @@ export function activateStrategy(id: string, isActive: boolean): Promise<Strateg
 
 export function setPrimaryStrategy(id: string): Promise<Strategy> {
   return apiFetch<Strategy>(`/strategies/${id}/primary`, { method: 'PATCH' });
+}
+
+// --- News Feed API client (Deliverable 7) ---
+
+export function getNews(ticker: string): Promise<NewsFeedResponse> {
+  return apiFetch<NewsFeedResponse>(`/news/${ticker.toUpperCase()}`);
 }
