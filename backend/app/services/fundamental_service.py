@@ -4,6 +4,7 @@ from decimal import Decimal, InvalidOperation
 
 from app.providers.factory import ProviderFactory
 from app.schemas.analysis import (
+    AnalystData,
     DividendData,
     DividendPayment,
     EarningsData,
@@ -70,7 +71,6 @@ class FundamentalService:
         return EarningsData()
 
     async def get_analysts(self, ticker: str) -> AnalystData:
-        from app.schemas.analysis import AnalystData
         return AnalystData()
 
     async def get_price(self, ticker: str) -> Decimal | None:

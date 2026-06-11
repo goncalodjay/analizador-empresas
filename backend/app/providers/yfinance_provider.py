@@ -6,6 +6,7 @@ from app.schemas.ingestion import (
     NormalizedCompanyInfo,
     NormalizedDividend,
     NormalizedFundamentals,
+    NormalizedPriceBar,
     NormalizedPriceData,
 )
 
@@ -59,6 +60,47 @@ class YFinanceProvider(AbstractMarketDataProvider):
             source=self.name,
             fetched_at=now,
         )
+
+    async def fetch_price_history(
+        self, ticker: str, period: str = "1y"
+    ) -> list[NormalizedPriceBar]:
+        import math
+
+        t = self._get_ticker(ticker)
+        hist = t.history(period=period, interval="1d")
+        now = datetime.now(timezone.utc)
+        bars: list[NormalizedPriceBar] = []
+
+        for idx, row in hist.iterrows():
+            open_ = row.get("Open")
+            high = row.get("High")
+            low = row.get("Low")
+            close = row.get("Close")
+
+            # Skip rows where any OHLC value is NaN
+            if any(v is None or (isinstance(v, float) and math.isnan(v)) for v in [open_, high, low, close]):
+                continue
+
+            volume_raw = row.get("Volume")
+            volume = int(volume_raw) if volume_raw is not None and not (isinstance(volume_raw, float) and math.isnan(volume_raw)) else None
+
+            bar_date = idx.to_pydatetime().date()
+
+            bars.append(
+                NormalizedPriceBar(
+                    ticker=ticker.upper(),
+                    date=bar_date,
+                    open=Decimal(str(round(float(open_), 4))),
+                    high=Decimal(str(round(float(high), 4))),
+                    low=Decimal(str(round(float(low), 4))),
+                    close=Decimal(str(round(float(close), 4))),
+                    volume=volume,
+                    source=self.name,
+                    fetched_at=now,
+                )
+            )
+
+        return bars
 
     async def fetch_dividends(
         self, ticker: str

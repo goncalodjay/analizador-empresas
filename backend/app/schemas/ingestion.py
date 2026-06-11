@@ -50,10 +50,24 @@ class NormalizedCompanyInfo(BaseModel):
     fetched_at: datetime
 
 
+class NormalizedPriceBar(BaseModel):
+    ticker: str
+    date: date
+    open: Decimal
+    high: Decimal
+    low: Decimal
+    close: Decimal
+    volume: int | None = None
+    source: str
+    fetched_at: datetime
+
+
 class IngestionResult(BaseModel):
     ticker: str
     price: bool = False
     fundamentals: bool = False
+    news: bool = False
+    price_history: bool = False
     source: str
     cached: bool = False
     error: str | None = None
