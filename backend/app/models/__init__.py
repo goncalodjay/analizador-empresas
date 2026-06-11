@@ -15,3 +15,4 @@ from app.models.news import NewsItem
 from app.models.digest import DailyDigest
 from app.models.ml import ModelVersion
 from app.models.backtest import BacktestResult
+from app.models.price_history import PriceHistory
