@@ -121,6 +121,28 @@ export interface StrategyUpdate {
   rules?: StrategyRules;
 }
 
+// --- Price History (Deliverable 8) ---
+
+export interface PricePoint {
+  date: string; // ISO 8601 date string YYYY-MM-DD
+  open: string;
+  high: string;
+  low: string;
+  close: string;
+  volume: number | null;
+}
+
+export interface PriceSeriesResponse {
+  ticker: string;
+  points: PricePoint[];
+  from_date: string;
+  to_date: string;
+  count: number;
+  source: string;
+  freshness: string;
+  fetched_at: string | null;
+}
+
 // --- News Feed (Deliverable 7) ---
 
 export interface NewsItemOut {

@@ -1,4 +1,4 @@
-import type { NewsFeedResponse, Strategy, StrategyCreate, StrategyUpdate } from '@/lib/types';
+import type { NewsFeedResponse, PriceSeriesResponse, Strategy, StrategyCreate, StrategyUpdate } from '@/lib/types';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -71,6 +71,22 @@ export function activateStrategy(id: string, isActive: boolean): Promise<Strateg
 
 export function setPrimaryStrategy(id: string): Promise<Strategy> {
   return apiFetch<Strategy>(`/strategies/${id}/primary`, { method: 'PATCH' });
+}
+
+// --- Price History API client (Deliverable 8) ---
+
+export function getPriceHistory(
+  ticker: string,
+  from?: string,
+  to?: string,
+): Promise<PriceSeriesResponse> {
+  const params = new URLSearchParams();
+  if (from) params.set('from', from);
+  if (to) params.set('to', to);
+  const qs = params.toString();
+  return apiFetch<PriceSeriesResponse>(
+    `/prices/${ticker.toUpperCase()}${qs ? `?${qs}` : ''}`,
+  );
 }
 
 // --- News Feed API client (Deliverable 7) ---
