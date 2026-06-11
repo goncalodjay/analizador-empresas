@@ -54,6 +54,7 @@ class IngestionResult(BaseModel):
     ticker: str
     price: bool = False
     fundamentals: bool = False
+    news: bool = False
     source: str
     cached: bool = False
     error: str | None = None

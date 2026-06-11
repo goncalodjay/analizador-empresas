@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import String, Numeric, DateTime, func
+from sqlalchemy import String, Numeric, DateTime, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column
 from pgvector.sqlalchemy import Vector
 
@@ -10,6 +10,9 @@ from app.core.base import Base
 
 class NewsItem(Base):
     __tablename__ = "news_items"
+    __table_args__ = (
+        UniqueConstraint("ticker", "url", name="uq_news_ticker_url"),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     ticker: Mapped[str | None] = mapped_column(String, nullable=True)
