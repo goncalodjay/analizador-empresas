@@ -1,14 +1,16 @@
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user
+from app.core.database import get_db
 from app.models.user import User
 from app.schemas.analysis import AnalysisResponse
 from app.services.fundamental_service import FundamentalService
 from app.services.health_score import HealthScoreEngine
 from app.services.peer_comparison import PeerComparisonService
-from app.services.technical_service import TechnicalService
+from app.services.technical_service import TechnicalService, persist_technical_signal
 
 router = APIRouter(prefix="/analysis", tags=["analysis"])
 
@@ -17,6 +19,7 @@ router = APIRouter(prefix="/analysis", tags=["analysis"])
 async def analyze_ticker(
     ticker: str,
     current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
 ):
     ticker_upper = ticker.upper()
     fundamental = FundamentalService()
@@ -33,6 +36,10 @@ async def analyze_ticker(
 
     technical_service = TechnicalService()
     technical = await technical_service.compute(ticker_upper)
+
+    # Persist computed signals — failure must not break the analysis response.
+    if technical is not None:
+        await persist_technical_signal(db, ticker_upper, technical)
 
     peers_service = PeerComparisonService()
     sector = metrics.pe_trailing.source if metrics.pe_trailing else None
