@@ -1,3 +1,5 @@
+import type { Strategy, StrategyCreate, StrategyUpdate } from '@/lib/types';
+
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 export class ApiError extends Error {
@@ -30,4 +32,43 @@ export async function apiFetch<T>(path: string, options?: RequestInit): Promise<
   }
 
   return res.json();
+}
+
+// --- Strategy API client (Deliverable 6) ---
+
+export function getStrategies(): Promise<Strategy[]> {
+  return apiFetch<Strategy[]>('/strategies');
+}
+
+export function getStrategy(id: string): Promise<Strategy> {
+  return apiFetch<Strategy>(`/strategies/${id}`);
+}
+
+export function createStrategy(data: StrategyCreate): Promise<Strategy> {
+  return apiFetch<Strategy>('/strategies', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export function updateStrategy(id: string, data: StrategyUpdate): Promise<Strategy> {
+  return apiFetch<Strategy>(`/strategies/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+}
+
+export function deleteStrategy(id: string): Promise<void> {
+  return apiFetch<void>(`/strategies/${id}`, { method: 'DELETE' });
+}
+
+export function activateStrategy(id: string, isActive: boolean): Promise<Strategy> {
+  return apiFetch<Strategy>(`/strategies/${id}/activate`, {
+    method: 'PATCH',
+    body: JSON.stringify({ is_active: isActive }),
+  });
+}
+
+export function setPrimaryStrategy(id: string): Promise<Strategy> {
+  return apiFetch<Strategy>(`/strategies/${id}/primary`, { method: 'PATCH' });
 }
