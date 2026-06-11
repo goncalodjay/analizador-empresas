@@ -3,10 +3,12 @@ import json
 import logging
 from datetime import datetime, timezone
 
+from sqlalchemy import text
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from app.core.database import _get_async_session_local
 from app.models.news import NewsItem
+from app.models.price_history import PriceHistory
 from app.providers.factory import ProviderFactory
 from app.schemas.ingestion import IngestionResult
 from app.services.cache_service import CacheService
@@ -54,6 +56,12 @@ class IngestionService:
             pass
 
         await self._ingest_news(ticker_upper, result)
+
+        try:
+            await self._persist_price_history(ticker_upper, result)
+        except Exception as e:
+            logger.error("Price history ingestion failed for %s: %s", ticker_upper, e)
+            result.error = str(e)
 
         return result
 
@@ -179,6 +187,71 @@ class IngestionService:
             logger.error("News ingestion failed for %s: %s", ticker, e)
             result.error = str(e)
             result.news = False
+
+    async def _persist_price_history(self, ticker: str, result: IngestionResult) -> None:
+        """Fetch and upsert OHLC price history for a ticker.
+
+        First-ingest detection: no rows → 1y backfill; existing rows → 7d refresh.
+        Uses ON CONFLICT (ticker, date) DO UPDATE semantics.
+        Follows the price error pattern: exceptions set result.error, do NOT raise.
+        Opens its own DB session (ADR-2) safe under asyncio.gather.
+        """
+        provider = ProviderFactory.get_price_provider()
+
+        try:
+            session_factory = _get_async_session_local()
+            async with session_factory() as session:
+                # First-ingest detection
+                check_stmt = text(
+                    "SELECT 1 FROM price_history WHERE ticker = :ticker LIMIT 1"
+                )
+                check_result = await session.execute(check_stmt, {"ticker": ticker})
+                existing = check_result.fetchone()
+                period = "7d" if existing else "1y"
+
+            bars = await provider.fetch_price_history(ticker, period)
+
+            if not bars:
+                return
+
+            rows = [
+                {
+                    "ticker": bar.ticker,
+                    "date": bar.date,
+                    "open": bar.open,
+                    "high": bar.high,
+                    "low": bar.low,
+                    "close": bar.close,
+                    "volume": bar.volume,
+                    "source": bar.source,
+                    "fetched_at": bar.fetched_at,
+                }
+                for bar in bars
+            ]
+
+            async with session_factory() as session:
+                stmt = pg_insert(PriceHistory).values(rows)
+                stmt = stmt.on_conflict_do_update(
+                    index_elements=["ticker", "date"],
+                    set_={
+                        "open": stmt.excluded.open,
+                        "high": stmt.excluded.high,
+                        "low": stmt.excluded.low,
+                        "close": stmt.excluded.close,
+                        "volume": stmt.excluded.volume,
+                        "source": stmt.excluded.source,
+                        "fetched_at": stmt.excluded.fetched_at,
+                    },
+                )
+                await session.execute(stmt)
+                await session.commit()
+
+            result.price_history = True
+
+        except Exception as e:
+            logger.error("Price history ingestion failed for %s: %s", ticker, e)
+            result.error = str(e)
+            result.price_history = False
 
     @staticmethod
     async def _fetch_and_serialize(coro):

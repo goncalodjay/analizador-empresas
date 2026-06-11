@@ -5,6 +5,7 @@ from app.schemas.ingestion import (
     NormalizedCompanyInfo,
     NormalizedDividend,
     NormalizedFundamentals,
+    NormalizedPriceBar,
     NormalizedPriceData,
 )
 
@@ -37,6 +38,11 @@ class AbstractMarketDataProvider(ABC):
     async def fetch_fundamentals(
         self, ticker: str
     ) -> NormalizedFundamentals: ...
+
+    async def fetch_price_history(
+        self, ticker: str, period: str = "1y"
+    ) -> list[NormalizedPriceBar]:
+        return []
 
     async def fetch_dividends(
         self, ticker: str
