@@ -49,3 +49,9 @@ class User(Base):
     iol_credentials: Mapped["IOLCredentials"] = relationship(
         "IOLCredentials", back_populates="user", uselist=False, cascade="all, delete-orphan"
     )
+    portfolio_holdings: Mapped[list["PortfolioHolding"]] = relationship(
+        "PortfolioHolding", back_populates="user", cascade="all, delete-orphan"
+    )
+    account_status: Mapped["AccountStatus"] = relationship(
+        "AccountStatus", back_populates="user", uselist=False, cascade="all, delete-orphan"
+    )
