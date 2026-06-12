@@ -143,6 +143,35 @@ export interface PriceSeriesResponse {
   fetched_at: string | null;
 }
 
+// --- IOL Portfolio (Deliverable 3) ---
+
+export interface IOLHolding {
+  ticker: string;
+  quantity: number;
+  avg_buy_price: number;
+  currency: string; // 'ARS' or 'USD'
+}
+
+export interface IOLHoldingsResponse {
+  holdings: IOLHolding[];
+}
+
+export interface IOLStatus {
+  connected: boolean;
+  iol_username?: string;
+  account_name?: string;
+  cash_balance?: number;
+  currency?: string;
+  last_sync?: string;
+  needs_reauth?: boolean;
+}
+
+export interface IOLSyncResponse {
+  status: string;
+  holdings_count: number;
+  synced_at: string;
+}
+
 // --- News Feed (Deliverable 7) ---
 
 export interface NewsItemOut {
