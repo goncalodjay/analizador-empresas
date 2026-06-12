@@ -36,6 +36,8 @@ async def test_post_iol_setup_with_valid_credentials(async_client: AsyncClient, 
     with patch("app.services.iol_service.IOLClient") as mock_client_class:
         mock_client = AsyncMock()
         mock_client_class.return_value = mock_client
+        mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+        mock_client.__aexit__ = AsyncMock(return_value=None)
         mock_client.authenticate = AsyncMock(
             return_value={
                 "access_token": "iol_access_token",
@@ -77,6 +79,8 @@ async def test_post_iol_setup_with_invalid_credentials(async_client: AsyncClient
     with patch("app.services.iol_service.IOLClient") as mock_client_class:
         mock_client = AsyncMock()
         mock_client_class.return_value = mock_client
+        mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+        mock_client.__aexit__ = AsyncMock(return_value=None)
         mock_client.authenticate = AsyncMock(side_effect=IOLAuthError("Invalid credentials"))
 
         # Setup IOL with wrong credentials
@@ -119,6 +123,8 @@ async def test_get_iol_status_connected(async_client: AsyncClient, encryption_ke
     with patch("app.services.iol_service.IOLClient") as mock_client_class:
         mock_client = AsyncMock()
         mock_client_class.return_value = mock_client
+        mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+        mock_client.__aexit__ = AsyncMock(return_value=None)
         mock_client.authenticate = AsyncMock(
             return_value={
                 "access_token": "iol_access_token",

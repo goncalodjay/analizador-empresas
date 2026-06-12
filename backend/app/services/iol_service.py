@@ -53,12 +53,12 @@ class IOLTokenManager:
             IOLError: If IOL API is unreachable
         """
         # Validate credentials against IOL
-        client = IOLClient(self.client_id, self.client_secret, self.base_url)
-        try:
-            token_response = await client.authenticate(iol_username, iol_password)
-        except IOLError as e:
-            logger.error(f"Failed to authenticate IOL user {iol_username}: {e}")
-            raise
+        async with IOLClient(self.client_id, self.client_secret, self.base_url) as client:
+            try:
+                token_response = await client.authenticate(iol_username, iol_password)
+            except IOLError as e:
+                logger.error(f"Failed to authenticate IOL user {iol_username}: {e}")
+                raise
 
         # Create or update credentials
         encrypted_password = IOLCredentials.encrypt_password(iol_password)
@@ -126,7 +126,9 @@ class IOLTokenManager:
         time_until_expiry = creds.time_until_expiry()
         if time_until_expiry < 60:
             logger.info(f"Token expiring soon for user {user_id}, refreshing...")
-            await self.refresh_token_if_near_expiry(db, user_id)
+            refresh_ok = await self.refresh_token_if_near_expiry(db, user_id)
+            if not refresh_ok:
+                raise IOLAuthError("Failed to refresh token")
 
         # Re-fetch in case refresh happened
         result = await db.execute(
@@ -164,31 +166,31 @@ class IOLTokenManager:
             return True
 
         # Refresh the token
-        client = IOLClient(self.client_id, self.client_secret, self.base_url)
-        try:
-            token_response = await client.refresh_token(creds.refresh_token)
-            expires_at = datetime.now(timezone.utc) + timedelta(
-                seconds=token_response.get("expires_in", 900)
-            )
+        async with IOLClient(self.client_id, self.client_secret, self.base_url) as client:
+            try:
+                token_response = await client.refresh_token(creds.refresh_token)
+                expires_at = datetime.now(timezone.utc) + timedelta(
+                    seconds=token_response.get("expires_in", 900)
+                )
 
-            creds.access_token = token_response.get("access_token", "")
-            creds.token_expires_at = expires_at
-            creds.refresh_token = token_response.get("refresh_token", creds.refresh_token)
-            creds.sync_error = None  # Clear any previous errors
-            creds.updated_at = datetime.now(timezone.utc)
+                creds.access_token = token_response.get("access_token", "")
+                creds.token_expires_at = expires_at
+                creds.refresh_token = token_response.get("refresh_token", creds.refresh_token)
+                creds.sync_error = None  # Clear any previous errors
+                creds.updated_at = datetime.now(timezone.utc)
 
-            await db.commit()
-            await db.refresh(creds)
+                await db.commit()
+                await db.refresh(creds)
 
-            logger.info(f"Successfully refreshed token for user {user_id}")
-            return True
+                logger.info(f"Successfully refreshed token for user {user_id}")
+                return True
 
-        except IOLError as e:
-            logger.error(f"Failed to refresh token for user {user_id}: {e}")
-            creds.sync_error = f"Token refresh failed: {str(e)}"
-            creds.updated_at = datetime.now(timezone.utc)
-            await db.commit()
-            return False
+            except IOLError as e:
+                logger.error(f"Failed to refresh token for user {user_id}: {e}")
+                creds.sync_error = f"Token refresh failed: {str(e)}"
+                creds.updated_at = datetime.now(timezone.utc)
+                await db.commit()
+                return False
 
     async def revoke_credentials(self, db: AsyncSession, user_id: UUID) -> None:
         """Revoke (delete) IOL credentials for a user.

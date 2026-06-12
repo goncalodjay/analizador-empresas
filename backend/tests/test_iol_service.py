@@ -57,6 +57,8 @@ async def test_store_credentials(db_session, test_user, encryption_key):
         with patch("app.services.iol_service.IOLClient") as mock_client_class:
             mock_client = AsyncMock()
             mock_client_class.return_value = mock_client
+            mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+            mock_client.__aexit__ = AsyncMock(return_value=None)
             mock_client.authenticate = AsyncMock(
                 return_value={
                     "access_token": "test_token",
@@ -137,6 +139,8 @@ async def test_get_valid_token_refreshes_if_near_expiry(db_session, test_user, e
         with patch("app.services.iol_service.IOLClient") as mock_client_class:
             mock_client = AsyncMock()
             mock_client_class.return_value = mock_client
+            mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+            mock_client.__aexit__ = AsyncMock(return_value=None)
             mock_client.refresh_token = AsyncMock(
                 return_value={
                     "access_token": "new_token",
@@ -150,6 +154,43 @@ async def test_get_valid_token_refreshes_if_near_expiry(db_session, test_user, e
             # Should have called refresh and returned new token
             mock_client.refresh_token.assert_called_once()
             assert token == "new_token"
+
+
+@pytest.mark.asyncio
+async def test_get_valid_token_raises_on_refresh_failure(db_session, test_user, encryption_key):
+    """Test that get_valid_token raises IOLAuthError if refresh fails."""
+    from app.models.iol_credentials import IOLCredentials
+
+    manager = IOLTokenManager()
+    now = datetime.now(timezone.utc)
+    expiry = now + timedelta(seconds=30)  # Expires soon
+
+    with patch("app.models.iol_credentials.settings.ENCRYPTION_KEY", encryption_key):
+        # Create credentials
+        creds = IOLCredentials(
+            user_id=test_user.id,
+            iol_username="user@iol.com",
+            encrypted_password=IOLCredentials.encrypt_password("password123"),
+            access_token="old_token",
+            token_expires_at=expiry,
+            refresh_token="refresh_token",
+        )
+        db_session.add(creds)
+        await db_session.commit()
+
+        # Mock the IOL client to fail
+        with patch("app.services.iol_service.IOLClient") as mock_client_class:
+            mock_client = AsyncMock()
+            mock_client_class.return_value = mock_client
+            mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+            mock_client.__aexit__ = AsyncMock(return_value=None)
+            mock_client.refresh_token = AsyncMock(
+                side_effect=IOLAuthError("Invalid refresh token")
+            )
+
+            # Should raise IOLAuthError since refresh failed
+            with pytest.raises(IOLAuthError, match="Failed to refresh token"):
+                await manager.get_valid_token(db_session, test_user.id)
 
 
 @pytest.mark.asyncio

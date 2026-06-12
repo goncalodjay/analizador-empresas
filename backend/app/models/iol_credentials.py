@@ -77,8 +77,8 @@ class IOLCredentials(Base):
         try:
             decrypted = cipher.decrypt(self.encrypted_password.encode())
             return decrypted.decode()
-        except Exception as e:
-            raise ValueError(f"Failed to decrypt password: {e}")
+        except Exception:
+            raise ValueError("ENCRYPTION_KEY not configured or invalid")
 
     def time_until_expiry(self) -> int:
         """Calculate seconds until token expiry.

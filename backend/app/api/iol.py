@@ -84,14 +84,14 @@ async def setup_iol_connection(
             synced_at=datetime.now(timezone.utc).isoformat(),
         )
 
-    except IOLAuthError as e:
-        logger.warning(f"IOL authentication failed for user {current_user.id}: {e}")
+    except IOLAuthError:
+        logger.warning(f"IOL authentication failed for user {current_user.id}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid IOL credentials"
         )
 
-    except IOLError as e:
-        logger.error(f"IOL API error for user {current_user.id}: {e}")
+    except IOLError:
+        logger.error(f"IOL API error for user {current_user.id}")
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="IOL API is currently unavailable",

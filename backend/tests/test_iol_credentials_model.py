@@ -33,6 +33,16 @@ def test_encrypt_password_creates_valid_ciphertext(encryption_key):
         assert decrypted_ok
 
 
+def test_encrypt_password_raises_on_empty_key():
+    """Test that encrypt_password raises ValueError when ENCRYPTION_KEY is empty."""
+    from app.models.iol_credentials import IOLCredentials
+
+    password = "my_iol_password"
+    with patch("app.models.iol_credentials.settings.ENCRYPTION_KEY", ""):
+        with pytest.raises(ValueError, match="ENCRYPTION_KEY not configured"):
+            IOLCredentials.encrypt_password(password)
+
+
 def test_encrypt_password_creates_different_ciphertexts(encryption_key):
     """Test that same password encrypted twice produces different ciphertexts (Fernet includes nonce)."""
     from app.models.iol_credentials import IOLCredentials

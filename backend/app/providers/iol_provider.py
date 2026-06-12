@@ -32,7 +32,10 @@ class IOLUnavailableError(IOLError):
 
 
 class IOLClient:
-    """IOL API client for OAuth2 password flow and API endpoints."""
+    """IOL API client for OAuth2 password flow and API endpoints.
+
+    Should be used as an async context manager (async with) or close() called manually.
+    """
 
     def __init__(self, client_id: str, client_secret: str, base_url: str):
         """Initialize IOL client.
