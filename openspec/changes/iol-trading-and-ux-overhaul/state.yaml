@@ -1,0 +1,55 @@
+changeName: iol-trading-and-ux-overhaul
+project: analizador-empresas
+
+phases:
+  explore:
+    status: done
+    completedAt: "2026-06-12T16:33:38Z"
+    artifact: openspec/changes/iol-trading-and-ux-overhaul/explore.md
+
+  proposal:
+    status: done
+    completedAt: "2026-06-12T17:00:00Z"
+    artifact: openspec/changes/iol-trading-and-ux-overhaul/proposal.md
+    notes: "Proposal REVISED: Trading removed from Phase 1 (read-only integration only). All 7 product questions answered by user. Scope reduced from 6 PRs to 5 PRs. Estimated 280-400 hours (down from 380-550)."
+
+  spec:
+    status: done
+    completedAt: "2026-06-12T18:00:00Z"
+    artifact: openspec/changes/iol-trading-and-ux-overhaul/specs/
+
+  design:
+    status: done
+    completedAt: "2026-06-12T18:15:00Z"
+    artifact: openspec/changes/iol-trading-and-ux-overhaul/design.md
+
+  tasks:
+    status: done
+    completedAt: "2026-06-12T18:45:00Z"
+    artifact: openspec/changes/iol-trading-and-ux-overhaul/tasks.md
+    blockingOn: []
+
+  apply:
+    status: pending
+    blockingOn: ["tasks"]
+
+  verify:
+    status: pending
+    blockingOn: ["apply"]
+
+  archive:
+    status: pending
+    blockingOn: ["verify"]
+
+nextRecommended: "sdd-tasks"
+deliveryStrategy: "auto-chain"
+chainStrategy: "stacked-to-main"
+estimatedEffort: "280-400 hours"
+estimatedDuration: "10-15 weeks"
+
+notes:
+  - "SCOPE CHANGE: Trading (buy/sell) explicitly removed from Phase 1. Phase 1 is read-only integration only."
+  - "All 7 product questions answered and incorporated. Proposal assumptions finalized."
+  - "5-PR delivery planned: auth-gate, iol-client, portfolio-sync, currency-pricing, dashboard-strategies."
+  - "Dashboard metrics locked: total invested, current value, unrealized P&L, realized P&L (if applicable)."
+  - "Strategy section: templates only in MVP; custom creation and backtesting deferred to Phase 2."

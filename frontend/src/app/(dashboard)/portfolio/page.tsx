@@ -31,22 +31,22 @@ export default function PortfolioPage() {
   };
 
   return (
-    <div className="p-6">
+    <div>
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Portfolio</h1>
+          <h1 className="text-2xl font-bold text-neutral-900">Portfolio</h1>
           <DataFreshnessTag status="live" />
         </div>
         <Link
           href="/portfolio/new"
-          className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          className="rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-neutral-0 hover:bg-primary-700 transition-colors"
         >
           Add Position
         </Link>
       </div>
 
-      {loading && <p className="text-gray-500">Loading...</p>}
-      {error && <p className="text-red-600">{error}</p>}
+      {loading && <p className="text-neutral-500">Loading...</p>}
+      {error && <p className="text-error">{error}</p>}
       {!loading && !error && <PortfolioTable positions={positions} onDelete={handleDelete} />}
     </div>
   );
