@@ -86,6 +86,11 @@ class IOLCredentials(Base):
         Returns:
             Seconds until expiry (negative if already expired)
         """
+        # Handle both timezone-aware and naive datetimes
+        expiry = self.token_expires_at
+        if expiry.tzinfo is None:
+            expiry = expiry.replace(tzinfo=timezone.utc)
+
         now = datetime.now(timezone.utc)
-        delta = self.token_expires_at - now
+        delta = expiry - now
         return int(delta.total_seconds())
