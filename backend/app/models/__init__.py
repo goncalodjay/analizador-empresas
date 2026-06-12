@@ -1,4 +1,5 @@
 from app.models.user import User
+from app.models.iol_credentials import IOLCredentials
 from app.models.portfolio import PortfolioPosition, Watchlist, WatchlistTicker
 from app.models.strategy import InvestmentStrategy
 from app.models.analysis import (
