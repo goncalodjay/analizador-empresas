@@ -198,7 +198,28 @@ async def sync_portfolio_now(
         HTTPException: If sync fails or IOL API is unreachable
     """
     try:
+        from app.models.iol_credentials import IOLCredentials
+        from sqlalchemy import select
+
         logger.info(f"Manual portfolio sync requested for user {current_user.id}")
+
+        # Check debounce: if last sync was < 5 seconds ago, return 429
+        creds_stmt = select(IOLCredentials).where(
+            IOLCredentials.user_id == current_user.id
+        )
+        creds_result = await db.execute(creds_stmt)
+        iol_creds = creds_result.scalar_one_or_none()
+
+        if iol_creds and iol_creds.last_synced_at:
+            from datetime import datetime, timezone, timedelta
+            now = datetime.now(timezone.utc)
+            time_since_last_sync = (now - iol_creds.last_synced_at).total_seconds()
+            if time_since_last_sync < 5:
+                raise HTTPException(
+                    status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                    detail=f"Sync debounced: wait {5 - int(time_since_last_sync)} more seconds before syncing again",
+                )
+
         sync_service = PortfolioSyncService()
 
         # Sync portfolio and account status

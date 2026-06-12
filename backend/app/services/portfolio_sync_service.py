@@ -6,7 +6,7 @@ from typing import Optional
 import uuid
 
 from pydantic import BaseModel
-from sqlalchemy import select, insert, update
+from sqlalchemy import select, insert, update, delete
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -15,6 +15,7 @@ from app.models.portfolio_holdings import PortfolioHolding
 from app.models.account_status import AccountStatus
 from app.providers.iol_provider import IOLClient, IOLAuthError, IOLError
 from app.services.iol_service import IOLTokenManager
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -32,10 +33,15 @@ class PortfolioSyncService:
 
     def __init__(self):
         """Initialize the sync service."""
+        # Configure IOL client from settings, same pattern as IOLTokenManager
+        client_id = getattr(settings, "IOL_CLIENT_ID", "")
+        client_secret = getattr(settings, "IOL_CLIENT_SECRET", "")
+        base_url = getattr(settings, "IOL_BASE_URL", "https://api.invertironline.com")
+
         self.iol_client = IOLClient(
-            client_id="",  # Will be injected from config on first use
-            client_secret="",
-            base_url="",
+            client_id=client_id,
+            client_secret=client_secret,
+            base_url=base_url,
         )
         self.iol_token_manager = IOLTokenManager()
 
@@ -66,13 +72,26 @@ class PortfolioSyncService:
             if not iol_creds:
                 raise IOLAuthError(f"No IOL credentials found for user {user_id}")
 
-            # Get valid token
+            # Get valid token, with re-auth retry on failure
             try:
                 token = await self.iol_token_manager.get_valid_token(db, user_id)
             except IOLAuthError as e:
-                iol_creds.sync_error = "Token refresh failed: invalid credentials"
-                await db.commit()
-                raise
+                # Attempt ONE re-authentication from stored encrypted credentials
+                logger.info(f"Token refresh failed, attempting re-authentication for user {user_id}")
+                try:
+                    decrypted_password = iol_creds.decrypt_password()
+                    # Re-authenticate and store new credentials
+                    await self.iol_token_manager.store_credentials(
+                        db, user_id, iol_creds.iol_username, decrypted_password
+                    )
+                    # Retry getting the token
+                    token = await self.iol_token_manager.get_valid_token(db, user_id)
+                except IOLAuthError as reauth_error:
+                    # Re-auth also failed
+                    logger.error(f"Re-authentication failed for user {user_id}: {reauth_error}")
+                    iol_creds.sync_error = "Reconnect required: re-authentication failed"
+                    await db.commit()
+                    raise
 
             # Fetch IOL portfolio
             try:
@@ -114,6 +133,15 @@ class PortfolioSyncService:
                 )
                 await db.execute(stmt)
                 synced_tickers.append(ticker)
+
+            # Remove sold holdings: delete positions not present in IOL response
+            # (per spec: IOL is source of truth)
+            if synced_tickers:
+                delete_stmt = delete(PortfolioHolding).where(
+                    (PortfolioHolding.user_id == user_id) &
+                    (~PortfolioHolding.ticker.in_(synced_tickers))
+                )
+                await db.execute(delete_stmt)
 
             # Commit transaction
             await db.commit()
