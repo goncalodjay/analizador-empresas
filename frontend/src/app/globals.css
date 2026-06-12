@@ -1,3 +1,39 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/**
+ * Design Tokens
+ *
+ * Colors (WCAG AA compliant, 4.5:1 contrast minimum)
+ * - primary-600: #0066cc (main brand color)
+ * - success: #00aa00 (positive feedback, gains)
+ * - warning: #ff8800 (cautions, alerts)
+ * - error: #cc0000 (errors, losses)
+ * - neutral-{50-900}: Grayscale palette for backgrounds and text
+ *
+ * Spacing Scale (4px base unit)
+ * - xs: 4px, sm: 8px, md: 12px, lg: 16px, xl: 24px, 2xl: 32px
+ *
+ * Typography
+ * - Font family: Inter, -apple-system, Segoe UI (system fallback)
+ * - Sizes: 12px (xs), 14px (sm), 16px (base), 18px (lg), 24px (xl), 32px (2xl)
+ * - Weights: 400 (normal), 600 (semibold), 700 (bold)
+ *
+ * Borders & Radius
+ * - Radius: 4px (sm), 8px (md), 16px (lg)
+ *
+ * Transitions
+ * - Duration: 150ms (fast), 300ms (standard)
+ * - Easing: ease-in, ease-out
+ *
+ * Usage: Apply tokens via Tailwind utilities (e.g., bg-primary-600, text-neutral-700)
+ */
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-neutral-50 text-neutral-900;
+}

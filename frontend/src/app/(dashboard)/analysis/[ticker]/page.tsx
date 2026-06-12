@@ -115,7 +115,7 @@ export default function AnalysisPage() {
     setError('');
     try {
       await apiFetch(`/ingestion/trigger/${ticker}`, { method: 'POST' });
-      await fetchData();
+      await Promise.all([fetchData(), fetchNews()]);
     } catch (err: any) {
       setError(err?.message || 'Ingestion failed');
     } finally {
@@ -123,27 +123,27 @@ export default function AnalysisPage() {
     }
   };
 
-  if (loading) return <div className="p-6 text-gray-500">Loading analysis for {ticker}...</div>;
+  if (loading) return <div className="text-neutral-500">Loading analysis for {ticker}...</div>;
 
   if (error) return (
-    <div className="p-6">
-      <p className="mb-4 text-red-600">{error}</p>
+    <div>
+      <p className="mb-4 text-error">{error}</p>
       <button
         onClick={runIngestion}
         disabled={ingesting}
-        className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
+        className="rounded bg-primary-600 px-4 py-2 text-neutral-0 hover:bg-primary-700 disabled:opacity-50 transition-colors"
       >
         {ingesting ? 'Fetching data…' : `Fetch data for ${ticker}`}
       </button>
     </div>
   );
 
-  if (!data) return <div className="p-6 text-gray-500">No data available for {ticker}</div>;
+  if (!data) return <div className="text-neutral-500">No data available for {ticker}</div>;
 
   const f = data.fundamentals;
 
   return (
-    <div className="p-6">
+    <div>
       {/* TradingView Chart */}
       <div className="mb-6">
         <TradingViewChart ticker={ticker} />
@@ -151,18 +151,18 @@ export default function AnalysisPage() {
 
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-2xl font-bold text-neutral-900">
             {data.company_name || ticker} ({ticker})
           </h1>
-          {data.sector && <p className="text-gray-500">{data.sector}</p>}
-          {data.price && <p className="mt-1 text-lg font-medium">${Number(data.price).toFixed(2)}</p>}
+          {data.sector && <p className="text-neutral-600">{data.sector}</p>}
+          {data.price && <p className="mt-1 text-lg font-medium text-neutral-900">${Number(data.price).toFixed(2)}</p>}
         </div>
         <div className="flex items-center gap-3">
           <DataFreshnessTag status="live" timestamp={data.cached_at?.slice(0, 16) || undefined} />
           <button
             onClick={runIngestion}
             disabled={ingesting}
-            className="rounded border border-gray-300 px-3 py-1 text-sm text-gray-600 hover:bg-gray-100 disabled:opacity-50"
+            className="rounded border border-neutral-300 px-3 py-1 text-sm text-neutral-600 hover:bg-neutral-100 disabled:opacity-50 transition-colors"
           >
             {ingesting ? 'Refreshing…' : 'Refresh data'}
           </button>
@@ -187,7 +187,7 @@ export default function AnalysisPage() {
 
       {f && (
         <>
-          <h2 className="mb-3 text-lg font-semibold">Valuation</h2>
+          <h2 className="mb-3 text-lg font-semibold text-neutral-900">Valuation</h2>
           <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
             {f.pe_trailing && <MetricCard {...f.pe_trailing} />}
             {f.pe_forward && <MetricCard {...f.pe_forward} />}
@@ -197,7 +197,7 @@ export default function AnalysisPage() {
             {f.beta && <MetricCard {...f.beta} />}
           </div>
 
-          <h2 className="mb-3 text-lg font-semibold">Growth & Financial Health</h2>
+          <h2 className="mb-3 text-lg font-semibold text-neutral-900">Growth & Financial Health</h2>
           <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {f.revenue_growth_yoy && <MetricCard {...f.revenue_growth_yoy} />}
             {f.debt_to_equity && <MetricCard {...f.debt_to_equity} />}
@@ -226,13 +226,13 @@ export default function AnalysisPage() {
       {/* News section — independent fetch; errors are isolated here */}
       <div className="mb-6">
         {newsLoading && (
-          <div className="animate-pulse rounded-lg border border-gray-200 bg-gray-100 p-4 text-sm text-gray-400">
+          <div className="animate-pulse rounded-lg border border-neutral-200 bg-neutral-100 p-4 text-sm text-neutral-400">
             Loading news for {ticker}…
           </div>
         )}
         {!newsLoading && newsError && (
-          <div className="rounded-lg border border-red-200 bg-red-50 p-4">
-            <p className="text-sm text-red-600">Could not load news: {newsError}</p>
+          <div className="rounded-lg border border-error/20 bg-error/10 p-4">
+            <p className="text-sm text-error">Could not load news: {newsError}</p>
           </div>
         )}
         {!newsLoading && !newsError && newsData && (
@@ -248,7 +248,7 @@ export default function AnalysisPage() {
       {/* Price history section — independent fetch; errors are isolated here */}
       <div className="mb-6">
         <div className="mb-2 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900">Price History</h2>
+          <h2 className="text-lg font-semibold text-neutral-900">Price History</h2>
           <div className="flex gap-1">
             {(['1M', '3M', '6M', '1Y'] as const).map((range) => (
               <button
@@ -259,8 +259,8 @@ export default function AnalysisPage() {
                 }}
                 className={`rounded px-3 py-1 text-sm font-medium transition-colors ${
                   priceRange === range
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    ? 'bg-primary-600 text-neutral-0'
+                    : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
                 }`}
               >
                 {range}
@@ -270,13 +270,13 @@ export default function AnalysisPage() {
         </div>
 
         {priceLoading && (
-          <div className="animate-pulse rounded-lg border border-gray-200 bg-gray-100 p-6 text-sm text-gray-400">
+          <div className="animate-pulse rounded-lg border border-neutral-200 bg-neutral-100 p-6 text-sm text-neutral-400">
             Loading price history for {ticker}…
           </div>
         )}
         {!priceLoading && priceError && (
-          <div className="rounded-lg border border-red-200 bg-red-50 p-4">
-            <p className="text-sm text-red-600">Could not load price history: {priceError}</p>
+          <div className="rounded-lg border border-error/20 bg-error/10 p-4">
+            <p className="text-sm text-error">Could not load price history: {priceError}</p>
           </div>
         )}
         {!priceLoading && !priceError && priceData && (
