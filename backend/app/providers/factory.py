@@ -8,8 +8,26 @@ from app.providers.yfinance_provider import YFinanceProvider
 
 class ProviderFactory:
     @staticmethod
-    def get_price_provider() -> AbstractMarketDataProvider:
+    def get_price_provider(currency: str = "USD") -> AbstractMarketDataProvider:
+        """Get price provider based on currency.
+
+        Args:
+            currency: Currency code ("ARS" for IOL BCBA, "USD" or default for yfinance)
+
+        Returns:
+            AbstractMarketDataProvider: IOLQuotesProvider for ARS, YFinanceProvider otherwise
+        """
+        if currency == "ARS":
+            # Import here to avoid circular imports
+            from app.providers.iol_quotes_provider import IOLQuotesProvider
+            return IOLQuotesProvider()
         return YFinanceProvider()
+
+    @staticmethod
+    def get_iol_quotes_provider() -> "IOLQuotesProvider":
+        """Get IOL quotes provider for ARS currency."""
+        from app.providers.iol_quotes_provider import IOLQuotesProvider
+        return IOLQuotesProvider()
 
     @staticmethod
     def get_fundamentals_provider() -> AbstractMarketDataProvider:
