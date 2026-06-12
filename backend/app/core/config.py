@@ -19,6 +19,8 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     SECURE_COOKIE_ENABLED: bool = False
 
+    ENCRYPTION_KEY: str = ""
+
     FINNHUB_API_KEY: str = ""
     ALPHA_VANTAGE_API_KEY: str = ""
     NEWSAPI_API_KEY: str = ""
