@@ -604,7 +604,7 @@
   - Unit test: GET /iol/account-status without JWT → returns 401
 
 ### Task 3.8: Deprecate Manual Portfolio Entry UI
-- [ ] **PENDING** (frontend work; deferred to next apply batch or via frontend specialist)
+- [x] **COMPLETE**
 - **Description**: Hide or remove manual portfolio entry UI. Redirect old manual edit URLs to read-only portfolio view.
 - **Files to Touch**:
   - `frontend/src/app/(dashboard)/portfolio/page.tsx` (update to read-only display; remove "Add Holdings" and "Edit Holdings" buttons)
