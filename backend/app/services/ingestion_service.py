@@ -2,12 +2,16 @@ import asyncio
 import json
 import logging
 from datetime import datetime, timezone
+from typing import Optional
+from uuid import UUID
 
-from sqlalchemy import text
+from sqlalchemy import text, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import _get_async_session_local
 from app.models.news import NewsItem
+from app.models.portfolio_holdings import PortfolioHolding
 from app.models.price_history import PriceHistory
 from app.providers.factory import ProviderFactory
 from app.schemas.ingestion import IngestionResult
@@ -40,6 +44,65 @@ class IngestionService:
             result.cached = price_result["cached"]
         except Exception as e:
             result.error = str(e)
+
+    async def ingest_ticker_with_currency(
+        self,
+        ticker: str,
+        user_id: UUID,
+        currency: Optional[str] = None,
+        db: Optional[AsyncSession] = None,
+    ) -> IngestionResult:
+        """Ingest ticker price with currency-aware provider routing.
+
+        Args:
+            ticker: Stock ticker symbol
+            user_id: User ID for portfolio lookup
+            currency: Optional currency ('ARS', 'USD', etc.); fetched from portfolio if not provided
+            db: Optional database session for portfolio lookup
+
+        Returns:
+            IngestionResult with price and source metadata
+        """
+        ticker_upper = ticker.upper()
+        result = IngestionResult(ticker=ticker_upper, source="yfinance")
+
+        try:
+            # Determine currency if not provided
+            if currency is None and db:
+                # Fetch currency from user's portfolio holding
+                stmt = select(PortfolioHolding).where(
+                    PortfolioHolding.user_id == user_id,
+                    PortfolioHolding.ticker == ticker_upper,
+                )
+                query_result = await db.execute(stmt)
+                holding = query_result.scalar_one_or_none()
+                currency = holding.currency if holding else "USD"
+            elif currency is None:
+                currency = "USD"
+
+            # Get provider based on currency
+            provider = ProviderFactory.get_price_provider(currency=currency)
+            result.source = provider.name
+
+            # Fetch price using currency-aware provider
+            price_key = self.cache.build_key(provider.name, "price", ticker_upper)
+            price_result = await self.cache.get_or_fetch(
+                price_key,
+                "price",
+                lambda: self._fetch_and_serialize(
+                    provider.fetch_price(ticker_upper)
+                ),
+            )
+            result.price = True
+            result.cached = price_result.get("cached", False)
+
+        except Exception as e:
+            logger.error(
+                f"Error ingesting {ticker_upper} with currency {currency}: {e}"
+            )
+            result.error = str(e)
+
+        return result
 
         try:
             fund_provider = ProviderFactory.get_fundamentals_provider()
@@ -164,6 +227,7 @@ class IngestionService:
                         fetched_at=datetime.now(timezone.utc),
                     ).on_conflict_do_update(
                         index_elements=["ticker", "url"],
+                        index_where=text("url IS NOT NULL"),
                         set_={
                             "headline": headline,
                             "summary": summary,
