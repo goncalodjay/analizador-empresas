@@ -633,6 +633,7 @@
 **Test Approach**: Strict TDD: test price factory routing by currency; test IOL quotes provider; test caching with different TTLs; test fallback logic; test price source indicator.
 
 ### Task 4.1: Extended Price Factory with Currency Routing
+- [x] **COMPLETE**
 - **Description**: Extend existing price factory to accept currency parameter and route ARS→IOL, USD→yfinance.
 - **Files to Touch**:
   - `backend/app/providers/factory.py` (update; extend `get_price_provider()` to accept currency param)
@@ -650,6 +651,7 @@
   - Unit test: factory returns YFinanceProvider for unknown currency (default)
 
 ### Task 4.2: IOL Quotes Provider Class
+- [x] **COMPLETE**
 - **Description**: Implement `backend/app/providers/iol_quotes_provider.py` with IOLQuotesProvider implementing AbstractMarketDataProvider.
 - **Files to Touch**:
   - `backend/app/providers/iol_quotes_provider.py` (new)
@@ -677,6 +679,7 @@
   - Mock: IOL quotes calls are mocked; yfinance calls are mocked
 
 ### Task 4.3: Price Source Metadata in Responses
+- [x] **COMPLETE** (NormalizedPriceData already includes source field; tests verify)
 - **Description**: Ensure all price responses include source field (iol-bcba, yfinance, stale). Update existing PriceData model if needed.
 - **Files to Touch**:
   - `backend/app/schemas/price.py` (or existing price schema file; update PriceData model)
@@ -706,6 +709,7 @@
   - Unit test: stale price has source="stale", confidence="low"
 
 ### Task 4.4: Price Caching Strategy (Separate by Source)
+- [x] **COMPLETE**
 - **Description**: Implement caching with separate TTLs: IOL 1-min, yfinance 5-min, stale price 24-hr fallback.
 - **Files to Touch**:
   - `backend/app/services/price_service.py` (new or update existing if present)
@@ -738,6 +742,7 @@
   - Unit test: stale price fallback returns with source="stale", confidence="low"
 
 ### Task 4.5: Per-Holding Currency Routing in Ingestion Service
+- [x] **COMPLETE**
 - **Description**: Update existing ingestion service to use currency-aware routing when fetching prices.
 - **Files to Touch**:
   - `backend/app/services/ingestion_service.py` (update; add currency routing)
@@ -757,6 +762,7 @@
   - Unit test: ingest_ticker with no currency → fetches from portfolio, uses correct provider
 
 ### Task 4.6: Price Source Indicator Frontend Component
+- [ ] **DEFERRED** (Frontend component deferred; backend provides source metadata; can be added in future PR for UI polish)
 - **Description**: Create frontend component to display price source badge (IOL, yfinance, Stale) next to prices.
 - **Files to Touch**:
   - `frontend/src/components/PriceSourceBadge.tsx` (new)
@@ -773,6 +779,7 @@
   - Unit test: tooltip displays formatted timestamp
 
 ### Task 4.7: Analysis Page Price Display with Currency Routing
+- [ ] **DEFERRED** (Frontend UI implementation deferred; backend API provides currency-aware pricing and source)
 - **Description**: Update analysis page ([ticker]) to display current price with source badge, using currency-aware routing.
 - **Files to Touch**:
   - `frontend/src/app/(dashboard)/analysis/[ticker]/page.tsx` (update)
@@ -787,6 +794,7 @@
   - Integration test: ARS holding shows IOL source; USD shows yfinance
 
 ### Task 4.8: Dashboard Holdings Table with Price Source Badges
+- [ ] **DEFERRED** (Frontend implementation deferred; backend service now returns source metadata for prices)
 - **Description**: Update dashboard holdings table to include current price with source badge and proper formatting.
 - **Files to Touch**:
   - `frontend/src/components/Dashboard/HoldingsTable.tsx` (update or create)
