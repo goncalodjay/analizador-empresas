@@ -762,10 +762,10 @@
   - Unit test: ingest_ticker with no currency → fetches from portfolio, uses correct provider
 
 ### Task 4.6: Price Source Indicator Frontend Component
-- [ ] **DEFERRED** (Frontend component deferred; backend provides source metadata; can be added in future PR for UI polish)
+- [x] **COMPLETE**
 - **Description**: Create frontend component to display price source badge (IOL, yfinance, Stale) next to prices.
 - **Files to Touch**:
-  - `frontend/src/components/PriceSourceBadge.tsx` (new)
+  - `frontend/src/components/common/PriceSourceBadge.tsx` (new)
 - **Acceptance Criteria** (from spec DeltaR3):
   - Component: `<PriceSourceBadge source="iol-bcba" fetched_at="..." />`
   - Display:
@@ -779,11 +779,11 @@
   - Unit test: tooltip displays formatted timestamp
 
 ### Task 4.7: Analysis Page Price Display with Currency Routing
-- [ ] **DEFERRED** (Frontend UI implementation deferred; backend API provides currency-aware pricing and source)
+- [x] **COMPLETE**
 - **Description**: Update analysis page ([ticker]) to display current price with source badge, using currency-aware routing.
 - **Files to Touch**:
-  - `frontend/src/app/(dashboard)/analysis/[ticker]/page.tsx` (update)
-  - `frontend/src/components/Analysis/TickerPrice.tsx` (new or update)
+  - `frontend/src/app/(dashboard)/analysis/[ticker]/page.tsx` (updated)
+  - Uses `PriceSourceBadge` component (from task 4.6)
 - **Acceptance Criteria** (from spec DeltaR6):
   - Page displays: "Current Price: $X.XX (IOL)" or "Current Price: $X.XX (yfinance)"
   - Price is fetched from API endpoint that returns source
@@ -794,11 +794,10 @@
   - Integration test: ARS holding shows IOL source; USD shows yfinance
 
 ### Task 4.8: Dashboard Holdings Table with Price Source Badges
-- [ ] **DEFERRED** (Frontend implementation deferred; backend service now returns source metadata for prices)
+- [x] **COMPLETE**
 - **Description**: Update dashboard holdings table to include current price with source badge and proper formatting.
 - **Files to Touch**:
-  - `frontend/src/components/Dashboard/HoldingsTable.tsx` (update or create)
-  - `frontend/src/app/(dashboard)/dashboard/page.tsx` (ensure uses updated table)
+  - `frontend/src/app/(dashboard)/dashboard/page.tsx` (complete rewrite with holdings table)
 - **Acceptance Criteria** (from spec DeltaR6):
   - Table columns: Ticker, Quantity, Avg Buy Price, Current Price (with source badge), Current Value, Unrealized P&L
   - Source badge displayed next to each price

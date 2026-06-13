@@ -33,7 +33,7 @@ phases:
     status: in_progress
     blockingOn: []
     appliedAt: "2026-06-12T23:55:00Z"
-    notes: "PR 4 of 5 (Currency-Aware Pricing) 62.5% complete (5 of 8 tasks). Tasks done: 4.1-4.5 (backend complete, fully tested). Tasks 4.6-4.8 deferred (frontend UI components; backend provides source metadata). Backend total: 3 work-unit commits, 26 new tests (all passing), 1,053 changed lines. Full test suite: 229 passed, 2 pre-existing Postgres-only failures."
+    notes: "PR 4 of 5 (Currency-Aware Pricing) 100% complete (8 of 8 tasks). Part A - Backend token wiring: per-user IOL token retrieval via IOLTokenManager, graceful fallback to yfinance. Part B - Frontend UI: PriceSourceBadge component (color-coded), analysis page price display with source indicator, dashboard holdings table with source badges. Total: 2 work-unit commits, +3 new tests (now 235 passing), 400+ changed lines. Full test suite: 232 passed, 2 pre-existing Postgres-only failures."
 
   verify:
     status: pending
@@ -43,7 +43,7 @@ phases:
     status: pending
     blockingOn: ["verify"]
 
-nextRecommended: "sdd-tasks"
+nextRecommended: "sdd-verify"
 deliveryStrategy: "auto-chain"
 chainStrategy: "stacked-to-main"
 estimatedEffort: "280-400 hours"
