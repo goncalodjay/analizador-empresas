@@ -2,7 +2,10 @@
 import logging
 from datetime import datetime, timezone
 from decimal import Decimal
-from typing import Any
+from typing import Any, Optional, TYPE_CHECKING
+from uuid import UUID
+
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.providers.base import AbstractMarketDataProvider
@@ -14,6 +17,9 @@ from app.schemas.ingestion import (
     NormalizedPriceBar,
     NormalizedPriceData,
 )
+
+if TYPE_CHECKING:
+    from app.services.iol_service import IOLTokenManager
 
 logger = logging.getLogger(__name__)
 
@@ -43,15 +49,40 @@ class IOLQuotesProvider(AbstractMarketDataProvider):
             )
         return self._iol_client
 
-    async def _get_system_token(self) -> str:
-        """Get system service account token for quotes.
+    async def _get_system_token(
+        self, user_id: Optional[UUID] = None, db: Optional[AsyncSession] = None
+    ) -> Optional[str]:
+        """Get IOL access token for quotes.
 
-        This is a placeholder; in production, this would fetch from a secure
-        service account or use the IOLTokenManager to get a valid token.
+        If user_id and db are provided, fetches the user's IOL token via IOLTokenManager.
+        Otherwise returns None (caller should handle fallback).
+
+        Args:
+            user_id: User ID for token lookup
+            db: Database session for token manager
+
+        Returns:
+            Access token string, or None if no token available
         """
-        # TODO: Implement proper system token retrieval
-        # For now, return empty; tests will mock this
-        return ""
+        if user_id and db:
+            # Use IOLTokenManager to get user's token
+            from app.services.iol_service import IOLTokenManager
+            token_manager = IOLTokenManager()
+            try:
+                token = await token_manager.get_valid_token(db, user_id)
+                if token:
+                    logger.debug(f"Retrieved IOL token for user {user_id}")
+                    return token
+                else:
+                    logger.warning(f"No IOL token found for user {user_id}")
+                    return None
+            except Exception as e:
+                logger.warning(f"Failed to retrieve IOL token for user {user_id}: {e}")
+                return None
+        else:
+            # No user context provided; cannot fetch token
+            logger.debug("No user context provided to _get_system_token; returning None")
+            return None
 
     async def _get_yfinance_fallback(self, ticker: str) -> NormalizedPriceData:
         """Fetch price from yfinance as fallback."""
@@ -62,11 +93,18 @@ class IOLQuotesProvider(AbstractMarketDataProvider):
         logger.info(f"Falling back to yfinance for {ticker}")
         return await self._yfinance_provider.fetch_price(ticker)
 
-    async def fetch_price(self, ticker: str) -> NormalizedPriceData:
+    async def fetch_price(
+        self,
+        ticker: str,
+        user_id: Optional[UUID] = None,
+        db: Optional[AsyncSession] = None,
+    ) -> NormalizedPriceData:
         """Fetch price from IOL BCBA quotes endpoint.
 
         Args:
             ticker: Stock ticker symbol (e.g., 'GGAL')
+            user_id: Optional user ID for token lookup
+            db: Optional database session for token lookup
 
         Returns:
             NormalizedPriceData with price from IOL or yfinance fallback
@@ -77,10 +115,15 @@ class IOLQuotesProvider(AbstractMarketDataProvider):
         ticker_upper = ticker.upper()
 
         try:
-            # Get IOL token and fetch quotes
-            access_token = await self._get_system_token()
-            iol_client = self._get_iol_client()
+            # Get IOL token (from user context if provided, otherwise None)
+            access_token = await self._get_system_token(user_id=user_id, db=db)
 
+            # If no token available, fall back to yfinance
+            if not access_token:
+                logger.info(f"No IOL token available for {ticker_upper}; using yfinance fallback")
+                return await self._get_yfinance_fallback(ticker_upper)
+
+            iol_client = self._get_iol_client()
             response = await iol_client.fetch_quotes(access_token, [ticker_upper])
 
             # Extract price from IOL response

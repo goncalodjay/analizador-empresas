@@ -2,6 +2,7 @@
 from datetime import datetime, timezone
 from decimal import Decimal
 from unittest.mock import AsyncMock, MagicMock, patch
+from uuid import uuid4
 
 import pytest
 
@@ -179,3 +180,111 @@ class TestIOLQuotesProvider:
         # This is implicit in the design; name='iol-bcba' signals BCBA=Buenos Aires=ARS
         assert "iol" in provider.name.lower()
         assert "bcba" in provider.name.lower()
+
+    @pytest.mark.asyncio
+    async def test_fetch_price_with_user_token_from_token_manager(self, provider):
+        """Test fetch_price() uses IOLTokenManager to get user's token when user_id provided."""
+        user_id = uuid4()
+
+        with patch.object(provider, "_get_iol_client") as mock_get_client, \
+             patch("app.services.iol_service.IOLTokenManager") as mock_token_manager_cls:
+
+            # Mock token manager
+            mock_token_manager = AsyncMock()
+            mock_token_manager_cls.return_value = mock_token_manager
+            mock_token_manager.get_valid_token.return_value = "user-token-abc123"
+
+            # Mock IOL client
+            mock_client = AsyncMock()
+            mock_get_client.return_value = mock_client
+            mock_client.fetch_quotes.return_value = {
+                "cotizaciones": [
+                    {
+                        "simbolo": "GGAL",
+                        "ultimoPrecio": 250.50,
+                        "timestamp": datetime.now(timezone.utc).isoformat()
+                    }
+                ]
+            }
+
+            # Mock database session
+            mock_db = AsyncMock()
+
+            # Execute with user context
+            price_data = await provider.fetch_price("GGAL", user_id=user_id, db=mock_db)
+
+            # Assertions
+            assert price_data.ticker == "GGAL"
+            assert price_data.source == "iol-bcba"
+            mock_token_manager.get_valid_token.assert_called_once_with(mock_db, user_id)
+            # Verify IOL was called with the user's token
+            mock_client.fetch_quotes.assert_called_once()
+            call_args = mock_client.fetch_quotes.call_args
+            assert call_args[0][0] == "user-token-abc123"  # First arg is the token
+
+    @pytest.mark.asyncio
+    async def test_fetch_price_fallback_on_iol_auth_error_with_user_token(self, provider):
+        """Test fetch_price() gracefully handles IOLAuthError when using user token."""
+        user_id = uuid4()
+
+        with patch.object(provider, "_get_iol_client") as mock_get_client, \
+             patch("app.services.iol_service.IOLTokenManager") as mock_token_manager_cls, \
+             patch.object(provider, "_get_yfinance_fallback", new_callable=AsyncMock) as mock_fallback:
+
+            # Mock token manager
+            mock_token_manager = AsyncMock()
+            mock_token_manager_cls.return_value = mock_token_manager
+            mock_token_manager.get_valid_token.return_value = "user-token-abc123"
+
+            # Mock IOL client to fail with auth error (expired/invalid token)
+            mock_client = AsyncMock()
+            mock_get_client.return_value = mock_client
+            mock_client.fetch_quotes.side_effect = IOLAuthError("Token expired")
+
+            # Mock yfinance fallback
+            mock_fallback.return_value = MagicMock(
+                ticker="GGAL",
+                close=Decimal("248.00"),
+                source="yfinance"
+            )
+
+            # Mock database session
+            mock_db = AsyncMock()
+
+            # Execute with user context
+            price_data = await provider.fetch_price("GGAL", user_id=user_id, db=mock_db)
+
+            # Assertions: should fall back to yfinance
+            assert price_data.source == "yfinance"
+            mock_fallback.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_fetch_price_no_user_token_available_fallback(self, provider):
+        """Test fetch_price() falls back when user has no IOL token configured."""
+        user_id = uuid4()
+
+        with patch.object(provider, "_get_iol_client") as mock_get_client, \
+             patch("app.services.iol_service.IOLTokenManager") as mock_token_manager_cls, \
+             patch.object(provider, "_get_yfinance_fallback", new_callable=AsyncMock) as mock_fallback:
+
+            # Mock token manager to return None (user has no IOL connection)
+            mock_token_manager = AsyncMock()
+            mock_token_manager_cls.return_value = mock_token_manager
+            mock_token_manager.get_valid_token.return_value = None
+
+            # Mock yfinance fallback
+            mock_fallback.return_value = MagicMock(
+                ticker="GGAL",
+                close=Decimal("248.00"),
+                source="yfinance"
+            )
+
+            # Mock database session
+            mock_db = AsyncMock()
+
+            # Execute with user context but no token
+            price_data = await provider.fetch_price("GGAL", user_id=user_id, db=mock_db)
+
+            # Assertions: should fall back to yfinance
+            assert price_data.source == "yfinance"
+            mock_fallback.assert_called_once()

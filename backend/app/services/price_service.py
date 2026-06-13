@@ -5,6 +5,10 @@ Implements separate cache TTLs: IOL 1-min, yfinance 5-min.
 import logging
 from datetime import datetime, timezone
 from decimal import Decimal
+from typing import Optional
+from uuid import UUID
+
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.providers.factory import ProviderFactory
 from app.schemas.ingestion import NormalizedPriceData
@@ -61,13 +65,19 @@ class PriceService:
         return self.YFINANCE_CACHE_TTL
 
     async def get_price_cached(
-        self, ticker: str, currency: str = "USD"
+        self,
+        ticker: str,
+        currency: str = "USD",
+        user_id: Optional[UUID] = None,
+        db: Optional[AsyncSession] = None,
     ) -> NormalizedPriceData | None:
         """Get cached price or fetch fresh price.
 
         Args:
             ticker: Stock ticker symbol
             currency: Currency code ('ARS', 'USD', etc.)
+            user_id: Optional user ID for IOL token lookup (for ARS holdings)
+            db: Optional database session for IOL token lookup
 
         Returns:
             NormalizedPriceData with price and source, or None if unavailable
@@ -89,7 +99,13 @@ class PriceService:
             logger.debug(
                 f"Cache miss for {ticker_upper}/{currency}; fetching from {provider.name}"
             )
-            price_data = await provider.fetch_price(ticker_upper)
+            # Pass user context to provider (for IOL token retrieval)
+            if hasattr(provider, "fetch_price") and currency == "ARS" and user_id and db:
+                price_data = await provider.fetch_price(
+                    ticker_upper, user_id=user_id, db=db
+                )
+            else:
+                price_data = await provider.fetch_price(ticker_upper)
 
             # Store in cache with source-specific TTL
             ttl = self._get_cache_ttl(price_data.source)
@@ -140,7 +156,13 @@ class PriceService:
         except Exception as e:
             logger.warning(f"Error invalidating cache for {ticker_upper}: {e}")
 
-    async def warm_cache(self, tickers: list[str], currency: str = "USD") -> None:
+    async def warm_cache(
+        self,
+        tickers: list[str],
+        currency: str = "USD",
+        user_id: Optional[UUID] = None,
+        db: Optional[AsyncSession] = None,
+    ) -> None:
         """Pre-populate cache with prices for multiple tickers.
 
         Useful for dashboard page load to reduce first-page latency.
@@ -148,6 +170,8 @@ class PriceService:
         Args:
             tickers: List of ticker symbols
             currency: Currency code
+            user_id: Optional user ID for IOL token lookup
+            db: Optional database session for IOL token lookup
         """
         if not tickers:
             return
@@ -156,6 +180,8 @@ class PriceService:
 
         for ticker in tickers:
             try:
-                await self.get_price_cached(ticker, currency=currency)
+                await self.get_price_cached(
+                    ticker, currency=currency, user_id=user_id, db=db
+                )
             except Exception as e:
                 logger.warning(f"Error warming cache for {ticker}: {e}")
