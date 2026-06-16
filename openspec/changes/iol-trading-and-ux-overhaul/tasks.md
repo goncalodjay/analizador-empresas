@@ -138,9 +138,10 @@
 **Rollback Boundary**: Revert IOL-related backend files, migrations, env config, and scheduler setup; manual removal of IOL credentials table if migration is reverted.  
 **Test Approach**: Strict TDD: test IOL client authenticate/refresh methods; test token refresh job scheduling; test credential encryption/decryption; test /iol/setup endpoint with valid/invalid credentials.
 
-- [ ] Make backend JWT cookie `secure` flag environment-aware (currently secure=False in backend/app/api/auth.py) — carried over from PR 1 review
+- [x] Make backend JWT cookie `secure` flag environment-aware (currently secure=False in backend/app/api/auth.py) — carried over from PR 1 review
 
 ### Task 2.1: Database Schema — IOLCredentials Table
+- [x] **COMPLETE**
 - **Description**: Create Alembic migration adding `iol_credentials` table to store encrypted IOL credentials (username, encrypted password, access token, refresh token, expiry, sync status).
 - **Files to Touch**:
   - `backend/alembic/versions/[timestamp]_add_iol_credentials.py` (new migration)
@@ -165,6 +166,7 @@
   - Schema validation test: verify columns and constraints are correct (use SQLAlchemy introspection)
 
 ### Task 2.2: IOLCredentials SQLAlchemy Model
+- [x] **COMPLETE**
 - **Description**: Create `backend/app/models/iol_credentials.py` with SQLAlchemy model for IOL credentials with encryption/decryption methods.
 - **Files to Touch**:
   - `backend/app/models/iol_credentials.py` (new)
@@ -184,6 +186,7 @@
   - Unit test: `time_until_expiry()` returns correct seconds
 
 ### Task 2.3: Encryption Key Setup (Fernet)
+- [x] **COMPLETE**
 - **Description**: Add `ENCRYPTION_KEY` environment variable handling to app config. Generate or validate Fernet key on startup.
 - **Files to Touch**:
   - `backend/app/core/config.py` (update; add ENCRYPTION_KEY env var)
@@ -202,6 +205,7 @@
   - Integration test: app startup succeeds with valid ENCRYPTION_KEY
 
 ### Task 2.4: IOL API Client (IOLClient Class)
+- [x] **COMPLETE**
 - **Description**: Implement `backend/app/providers/iol_provider.py` with IOLClient class for OAuth2 authentication, token refresh, portfolio fetch, account status fetch, quotes fetch.
 - **Files to Touch**:
   - `backend/app/providers/iol_provider.py` (new)
@@ -231,6 +235,7 @@
   - Mocking: all tests mock aiohttp calls (no real HTTP to IOL); use `aioresponses` or similar
 
 ### Task 2.5: IOL Token Manager Service
+- [x] **COMPLETE**
 - **Description**: Implement `backend/app/services/iol_service.py` with IOLTokenManager class for credential storage, token retrieval, and token refresh with safety checks.
 - **Files to Touch**:
   - `backend/app/services/iol_service.py` (new)
@@ -255,6 +260,7 @@
   - Mock: IOLClient calls are mocked; DB session is provided via fixture
 
 ### Task 2.6: Proactive Token Refresh Job (APScheduler)
+- [ ] **DEFERRED** (not required for core PR 2 functionality; request-level safeguard in get_valid_token() sufficient for MVP)
 - **Description**: Implement background job using APScheduler that runs every 13 minutes to proactively refresh IOL tokens expiring within 2 minutes. Set up scheduler lifecycle (startup, shutdown).
 - **Files to Touch**:
   - `backend/app/core/scheduler.py` (new)
@@ -286,6 +292,7 @@
   - Integration test: scheduler starts with app; job runs after 13 minutes (simulated with immediate test run)
 
 ### Task 2.7: /iol/setup Endpoint (IOL Onboarding)
+- [x] **COMPLETE** (portfolio sync deferred to PR 3)
 - **Description**: Implement FastAPI endpoint `POST /iol/setup` that validates IOL credentials, stores encrypted credentials, triggers immediate portfolio sync, and sets `iol_connected = true` in user context.
 - **Files to Touch**:
   - `backend/app/api/iol.py` (new)
@@ -333,6 +340,7 @@
   - Integration test: POST /iol/setup → credentials stored → subsequent GET /iol/status returns connected=true
 
 ### Task 2.8: /iol/status Endpoint (Connection Status)
+- [x] **COMPLETE**
 - **Description**: Implement `GET /iol/status` endpoint that returns IOL connection status, account name, cash balance, last sync time, needs_reauth flag.
 - **Files to Touch**:
   - `backend/app/api/iol.py` (add endpoint)
@@ -388,6 +396,7 @@
 **Test Approach**: Strict TDD: test portfolio sync service with mocked IOL data; test sync job scheduling; test sync endpoint; test manual portfolio deprecation (redirects on old URLs).
 
 ### Task 3.1: Database Schema — Portfolio Holdings and Account Status Tables
+- [x] **COMPLETE**
 - **Description**: Create Alembic migrations for `portfolio_holdings` and `user_account_status` tables (separate from old manual portfolio if present).
 - **Files to Touch**:
   - `backend/alembic/versions/[timestamp]_add_portfolio_holdings_table.py` (new migration)
@@ -421,6 +430,7 @@
   - Schema validation: verify columns, constraints, indexes via SQLAlchemy introspection
 
 ### Task 3.2: SQLAlchemy Models — PortfolioHolding and AccountStatus
+- [x] **COMPLETE**
 - **Description**: Create `backend/app/models/portfolio_holdings.py` and extend user model with account status fields (or separate model).
 - **Files to Touch**:
   - `backend/app/models/portfolio_holdings.py` (new)
@@ -441,6 +451,7 @@
   - Unit test: relationships work (user.portfolio_holdings, user.account_status)
 
 ### Task 3.3: Portfolio Sync Service
+- [x] **COMPLETE**
 - **Description**: Implement `backend/app/services/portfolio_sync_service.py` with PortfolioSyncService class for fetching IOL holdings, syncing to portfolio_holdings table, fetching account status.
 - **Files to Touch**:
   - `backend/app/services/portfolio_sync_service.py` (new)
@@ -472,6 +483,7 @@
   - Integration test: full sync workflow (auth → fetch → upsert → commit)
 
 ### Task 3.4: Periodic Portfolio Sync Job (APScheduler)
+- [ ] **DEFERRED** (same rationale as PR 2 Task 2.6: request-level safeguard in get_valid_token() sufficient for MVP; periodicsync job will be added in future optimization pass)
 - **Description**: Implement background job that runs every 5 minutes to sync all users' portfolios and account status.
 - **Files to Touch**:
   - `backend/app/core/scheduler.py` (extend; add periodic_portfolio_sync job)
@@ -499,6 +511,7 @@
   - Integration test: job runs, updates portfolio_holdings and user_account_status
 
 ### Task 3.5: /iol/sync-now Endpoint (Manual Refresh)
+- [x] **COMPLETE**
 - **Description**: Implement `POST /iol/sync-now` endpoint for on-demand portfolio sync. Returns immediately with status.
 - **Files to Touch**:
   - `backend/app/api/iol.py` (add endpoint)
@@ -533,6 +546,7 @@
   - Integration test: endpoint completes within 5 seconds
 
 ### Task 3.6: /iol/holdings Endpoint (Fetch Holdings Read-Only)
+- [x] **COMPLETE**
 - **Description**: Implement `GET /iol/holdings` endpoint that returns user's current portfolio holdings from the database (not directly from IOL API).
 - **Files to Touch**:
   - `backend/app/api/iol.py` (add endpoint)
@@ -562,6 +576,7 @@
   - Unit test: GET /iol/holdings without JWT → returns 401
 
 ### Task 3.7: /iol/account-status Endpoint
+- [x] **COMPLETE**
 - **Description**: Implement `GET /iol/account-status` endpoint that returns cached account status.
 - **Files to Touch**:
   - `backend/app/api/iol.py` (add endpoint)
@@ -589,6 +604,7 @@
   - Unit test: GET /iol/account-status without JWT → returns 401
 
 ### Task 3.8: Deprecate Manual Portfolio Entry UI
+- [x] **COMPLETE**
 - **Description**: Hide or remove manual portfolio entry UI. Redirect old manual edit URLs to read-only portfolio view.
 - **Files to Touch**:
   - `frontend/src/app/(dashboard)/portfolio/page.tsx` (update to read-only display; remove "Add Holdings" and "Edit Holdings" buttons)
