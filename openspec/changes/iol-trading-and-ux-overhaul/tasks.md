@@ -396,6 +396,7 @@
 **Test Approach**: Strict TDD: test portfolio sync service with mocked IOL data; test sync job scheduling; test sync endpoint; test manual portfolio deprecation (redirects on old URLs).
 
 ### Task 3.1: Database Schema — Portfolio Holdings and Account Status Tables
+- [x] **COMPLETE**
 - **Description**: Create Alembic migrations for `portfolio_holdings` and `user_account_status` tables (separate from old manual portfolio if present).
 - **Files to Touch**:
   - `backend/alembic/versions/[timestamp]_add_portfolio_holdings_table.py` (new migration)
@@ -429,6 +430,7 @@
   - Schema validation: verify columns, constraints, indexes via SQLAlchemy introspection
 
 ### Task 3.2: SQLAlchemy Models — PortfolioHolding and AccountStatus
+- [x] **COMPLETE**
 - **Description**: Create `backend/app/models/portfolio_holdings.py` and extend user model with account status fields (or separate model).
 - **Files to Touch**:
   - `backend/app/models/portfolio_holdings.py` (new)
@@ -449,6 +451,7 @@
   - Unit test: relationships work (user.portfolio_holdings, user.account_status)
 
 ### Task 3.3: Portfolio Sync Service
+- [x] **COMPLETE**
 - **Description**: Implement `backend/app/services/portfolio_sync_service.py` with PortfolioSyncService class for fetching IOL holdings, syncing to portfolio_holdings table, fetching account status.
 - **Files to Touch**:
   - `backend/app/services/portfolio_sync_service.py` (new)
@@ -480,6 +483,7 @@
   - Integration test: full sync workflow (auth → fetch → upsert → commit)
 
 ### Task 3.4: Periodic Portfolio Sync Job (APScheduler)
+- [ ] **DEFERRED** (same rationale as PR 2 Task 2.6: request-level safeguard in get_valid_token() sufficient for MVP; periodicsync job will be added in future optimization pass)
 - **Description**: Implement background job that runs every 5 minutes to sync all users' portfolios and account status.
 - **Files to Touch**:
   - `backend/app/core/scheduler.py` (extend; add periodic_portfolio_sync job)
@@ -507,6 +511,7 @@
   - Integration test: job runs, updates portfolio_holdings and user_account_status
 
 ### Task 3.5: /iol/sync-now Endpoint (Manual Refresh)
+- [x] **COMPLETE**
 - **Description**: Implement `POST /iol/sync-now` endpoint for on-demand portfolio sync. Returns immediately with status.
 - **Files to Touch**:
   - `backend/app/api/iol.py` (add endpoint)
@@ -541,6 +546,7 @@
   - Integration test: endpoint completes within 5 seconds
 
 ### Task 3.6: /iol/holdings Endpoint (Fetch Holdings Read-Only)
+- [x] **COMPLETE**
 - **Description**: Implement `GET /iol/holdings` endpoint that returns user's current portfolio holdings from the database (not directly from IOL API).
 - **Files to Touch**:
   - `backend/app/api/iol.py` (add endpoint)
@@ -570,6 +576,7 @@
   - Unit test: GET /iol/holdings without JWT → returns 401
 
 ### Task 3.7: /iol/account-status Endpoint
+- [x] **COMPLETE**
 - **Description**: Implement `GET /iol/account-status` endpoint that returns cached account status.
 - **Files to Touch**:
   - `backend/app/api/iol.py` (add endpoint)
@@ -597,6 +604,7 @@
   - Unit test: GET /iol/account-status without JWT → returns 401
 
 ### Task 3.8: Deprecate Manual Portfolio Entry UI
+- [x] **COMPLETE**
 - **Description**: Hide or remove manual portfolio entry UI. Redirect old manual edit URLs to read-only portfolio view.
 - **Files to Touch**:
   - `frontend/src/app/(dashboard)/portfolio/page.tsx` (update to read-only display; remove "Add Holdings" and "Edit Holdings" buttons)
