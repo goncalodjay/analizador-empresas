@@ -30,8 +30,10 @@ phases:
     blockingOn: []
 
   apply:
-    status: pending
-    blockingOn: ["tasks"]
+    status: in_progress
+    blockingOn: []
+    appliedAt: "2026-06-12T20:30:00Z"
+    notes: "PR 2 of 5 (IOL OAuth2 Client + Token Manager) 95% complete. Tasks done: 2.1-2.5, 2.7-2.8. Task 2.6 (APScheduler background job) deferred as request-level safeguard in get_valid_token() is sufficient for MVP. Total commits: 6 work-unit commits, 33 passing tests, all tests in TDD. Carry-over task complete (env-aware secure cookie flag)."
 
   verify:
     status: pending

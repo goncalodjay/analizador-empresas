@@ -46,3 +46,6 @@ class User(Base):
     model_versions: Mapped[list["ModelVersion"]] = relationship(
         "ModelVersion", back_populates="user", cascade="all, delete-orphan"
     )
+    iol_credentials: Mapped["IOLCredentials"] = relationship(
+        "IOLCredentials", back_populates="user", uselist=False, cascade="all, delete-orphan"
+    )

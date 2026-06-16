@@ -138,9 +138,10 @@
 **Rollback Boundary**: Revert IOL-related backend files, migrations, env config, and scheduler setup; manual removal of IOL credentials table if migration is reverted.  
 **Test Approach**: Strict TDD: test IOL client authenticate/refresh methods; test token refresh job scheduling; test credential encryption/decryption; test /iol/setup endpoint with valid/invalid credentials.
 
-- [ ] Make backend JWT cookie `secure` flag environment-aware (currently secure=False in backend/app/api/auth.py) — carried over from PR 1 review
+- [x] Make backend JWT cookie `secure` flag environment-aware (currently secure=False in backend/app/api/auth.py) — carried over from PR 1 review
 
 ### Task 2.1: Database Schema — IOLCredentials Table
+- [x] **COMPLETE**
 - **Description**: Create Alembic migration adding `iol_credentials` table to store encrypted IOL credentials (username, encrypted password, access token, refresh token, expiry, sync status).
 - **Files to Touch**:
   - `backend/alembic/versions/[timestamp]_add_iol_credentials.py` (new migration)
@@ -165,6 +166,7 @@
   - Schema validation test: verify columns and constraints are correct (use SQLAlchemy introspection)
 
 ### Task 2.2: IOLCredentials SQLAlchemy Model
+- [x] **COMPLETE**
 - **Description**: Create `backend/app/models/iol_credentials.py` with SQLAlchemy model for IOL credentials with encryption/decryption methods.
 - **Files to Touch**:
   - `backend/app/models/iol_credentials.py` (new)
@@ -184,6 +186,7 @@
   - Unit test: `time_until_expiry()` returns correct seconds
 
 ### Task 2.3: Encryption Key Setup (Fernet)
+- [x] **COMPLETE**
 - **Description**: Add `ENCRYPTION_KEY` environment variable handling to app config. Generate or validate Fernet key on startup.
 - **Files to Touch**:
   - `backend/app/core/config.py` (update; add ENCRYPTION_KEY env var)
@@ -202,6 +205,7 @@
   - Integration test: app startup succeeds with valid ENCRYPTION_KEY
 
 ### Task 2.4: IOL API Client (IOLClient Class)
+- [x] **COMPLETE**
 - **Description**: Implement `backend/app/providers/iol_provider.py` with IOLClient class for OAuth2 authentication, token refresh, portfolio fetch, account status fetch, quotes fetch.
 - **Files to Touch**:
   - `backend/app/providers/iol_provider.py` (new)
@@ -231,6 +235,7 @@
   - Mocking: all tests mock aiohttp calls (no real HTTP to IOL); use `aioresponses` or similar
 
 ### Task 2.5: IOL Token Manager Service
+- [x] **COMPLETE**
 - **Description**: Implement `backend/app/services/iol_service.py` with IOLTokenManager class for credential storage, token retrieval, and token refresh with safety checks.
 - **Files to Touch**:
   - `backend/app/services/iol_service.py` (new)
@@ -255,6 +260,7 @@
   - Mock: IOLClient calls are mocked; DB session is provided via fixture
 
 ### Task 2.6: Proactive Token Refresh Job (APScheduler)
+- [ ] **DEFERRED** (not required for core PR 2 functionality; request-level safeguard in get_valid_token() sufficient for MVP)
 - **Description**: Implement background job using APScheduler that runs every 13 minutes to proactively refresh IOL tokens expiring within 2 minutes. Set up scheduler lifecycle (startup, shutdown).
 - **Files to Touch**:
   - `backend/app/core/scheduler.py` (new)
@@ -286,6 +292,7 @@
   - Integration test: scheduler starts with app; job runs after 13 minutes (simulated with immediate test run)
 
 ### Task 2.7: /iol/setup Endpoint (IOL Onboarding)
+- [x] **COMPLETE** (portfolio sync deferred to PR 3)
 - **Description**: Implement FastAPI endpoint `POST /iol/setup` that validates IOL credentials, stores encrypted credentials, triggers immediate portfolio sync, and sets `iol_connected = true` in user context.
 - **Files to Touch**:
   - `backend/app/api/iol.py` (new)
@@ -333,6 +340,7 @@
   - Integration test: POST /iol/setup → credentials stored → subsequent GET /iol/status returns connected=true
 
 ### Task 2.8: /iol/status Endpoint (Connection Status)
+- [x] **COMPLETE**
 - **Description**: Implement `GET /iol/status` endpoint that returns IOL connection status, account name, cash balance, last sync time, needs_reauth flag.
 - **Files to Touch**:
   - `backend/app/api/iol.py` (add endpoint)
