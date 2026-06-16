@@ -30,3 +30,7 @@ Thumbs.db
 
 # Docker
 postgres_data/
+
+# Local skill-registry tooling state (machine-specific paths, auto-generated)
+.atl/skill-registry.md
+.atl/.skill-registry.cache.json
