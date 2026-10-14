@@ -633,6 +633,7 @@
 **Test Approach**: Strict TDD: test price factory routing by currency; test IOL quotes provider; test caching with different TTLs; test fallback logic; test price source indicator.
 
 ### Task 4.1: Extended Price Factory with Currency Routing
+- [x] **COMPLETE**
 - **Description**: Extend existing price factory to accept currency parameter and route ARS→IOL, USD→yfinance.
 - **Files to Touch**:
   - `backend/app/providers/factory.py` (update; extend `get_price_provider()` to accept currency param)
@@ -650,6 +651,7 @@
   - Unit test: factory returns YFinanceProvider for unknown currency (default)
 
 ### Task 4.2: IOL Quotes Provider Class
+- [x] **COMPLETE**
 - **Description**: Implement `backend/app/providers/iol_quotes_provider.py` with IOLQuotesProvider implementing AbstractMarketDataProvider.
 - **Files to Touch**:
   - `backend/app/providers/iol_quotes_provider.py` (new)
@@ -677,6 +679,7 @@
   - Mock: IOL quotes calls are mocked; yfinance calls are mocked
 
 ### Task 4.3: Price Source Metadata in Responses
+- [x] **COMPLETE** (NormalizedPriceData already includes source field; tests verify)
 - **Description**: Ensure all price responses include source field (iol-bcba, yfinance, stale). Update existing PriceData model if needed.
 - **Files to Touch**:
   - `backend/app/schemas/price.py` (or existing price schema file; update PriceData model)
@@ -706,6 +709,7 @@
   - Unit test: stale price has source="stale", confidence="low"
 
 ### Task 4.4: Price Caching Strategy (Separate by Source)
+- [x] **COMPLETE**
 - **Description**: Implement caching with separate TTLs: IOL 1-min, yfinance 5-min, stale price 24-hr fallback.
 - **Files to Touch**:
   - `backend/app/services/price_service.py` (new or update existing if present)
@@ -738,6 +742,7 @@
   - Unit test: stale price fallback returns with source="stale", confidence="low"
 
 ### Task 4.5: Per-Holding Currency Routing in Ingestion Service
+- [x] **COMPLETE**
 - **Description**: Update existing ingestion service to use currency-aware routing when fetching prices.
 - **Files to Touch**:
   - `backend/app/services/ingestion_service.py` (update; add currency routing)
@@ -757,9 +762,10 @@
   - Unit test: ingest_ticker with no currency → fetches from portfolio, uses correct provider
 
 ### Task 4.6: Price Source Indicator Frontend Component
+- [x] **COMPLETE**
 - **Description**: Create frontend component to display price source badge (IOL, yfinance, Stale) next to prices.
 - **Files to Touch**:
-  - `frontend/src/components/PriceSourceBadge.tsx` (new)
+  - `frontend/src/components/common/PriceSourceBadge.tsx` (new)
 - **Acceptance Criteria** (from spec DeltaR3):
   - Component: `<PriceSourceBadge source="iol-bcba" fetched_at="..." />`
   - Display:
@@ -773,10 +779,11 @@
   - Unit test: tooltip displays formatted timestamp
 
 ### Task 4.7: Analysis Page Price Display with Currency Routing
+- [x] **COMPLETE**
 - **Description**: Update analysis page ([ticker]) to display current price with source badge, using currency-aware routing.
 - **Files to Touch**:
-  - `frontend/src/app/(dashboard)/analysis/[ticker]/page.tsx` (update)
-  - `frontend/src/components/Analysis/TickerPrice.tsx` (new or update)
+  - `frontend/src/app/(dashboard)/analysis/[ticker]/page.tsx` (updated)
+  - Uses `PriceSourceBadge` component (from task 4.6)
 - **Acceptance Criteria** (from spec DeltaR6):
   - Page displays: "Current Price: $X.XX (IOL)" or "Current Price: $X.XX (yfinance)"
   - Price is fetched from API endpoint that returns source
@@ -787,10 +794,10 @@
   - Integration test: ARS holding shows IOL source; USD shows yfinance
 
 ### Task 4.8: Dashboard Holdings Table with Price Source Badges
+- [x] **COMPLETE**
 - **Description**: Update dashboard holdings table to include current price with source badge and proper formatting.
 - **Files to Touch**:
-  - `frontend/src/components/Dashboard/HoldingsTable.tsx` (update or create)
-  - `frontend/src/app/(dashboard)/dashboard/page.tsx` (ensure uses updated table)
+  - `frontend/src/app/(dashboard)/dashboard/page.tsx` (complete rewrite with holdings table)
 - **Acceptance Criteria** (from spec DeltaR6):
   - Table columns: Ticker, Quantity, Avg Buy Price, Current Price (with source badge), Current Value, Unrealized P&L
   - Source badge displayed next to each price

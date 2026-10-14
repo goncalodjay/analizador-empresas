@@ -1,0 +1,10 @@
+* text=auto eol=lf
+
+# JSON files: keep LF, mark as text explicitly (some JSON tooling is picky)
+*.json text eol=lf
+
+# Shell scripts: LF is required
+*.sh text eol=lf
+
+# Markdown and docs: LF
+*.md text eol=lf

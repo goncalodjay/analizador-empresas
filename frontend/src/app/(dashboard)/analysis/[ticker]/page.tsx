@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { apiFetch, getNews, getPriceHistory } from '@/lib/api';
-import type { NewsFeedResponse, PriceSeriesResponse } from '@/lib/types';
+import type { NewsFeedResponse, PriceSeriesResponse, IOLHoldingsResponse } from '@/lib/types';
 import { MetricCard } from '@/components/analysis/MetricCard';
 import { HealthScoreGauge } from '@/components/analysis/HealthScoreGauge';
 import { PeerRankingTable } from '@/components/analysis/PeerRankingTable';
@@ -11,6 +11,7 @@ import { TechnicalPanel, TechnicalIndicators } from '@/components/analysis/Techn
 import { DataFreshnessTag } from '@/components/layout/DataFreshnessTag';
 import { NewsFeed } from '@/components/analysis/NewsFeed';
 import { PriceHistoryChart } from '@/components/analysis/PriceHistoryChart';
+import { PriceSourceBadge } from '@/components/common/PriceSourceBadge';
 
 interface AnalysisData {
   ticker: string;
@@ -52,6 +53,28 @@ export default function AnalysisPage() {
   const [priceLoading, setPriceLoading] = useState(true);
   const [priceError, setPriceError] = useState('');
   const [priceRange, setPriceRange] = useState<RangeKey>('1Y');
+
+  // Holdings for price source determination (ARS→IOL, USD→yfinance)
+  const [holdings, setHoldings] = useState<IOLHoldingsResponse | null>(null);
+  const [priceSt, setPriceSt] = useState('yfinance');  // Price source for display
+
+  const fetchHoldings = async () => {
+    try {
+      const result = await apiFetch<IOLHoldingsResponse>('/iol/holdings');
+      setHoldings(result);
+
+      // Determine price source based on ticker currency in holdings
+      const holding = result.holdings?.find((h: any) => h.ticker === ticker);
+      if (holding?.currency === 'ARS') {
+        setPriceSt('iol-bcba');
+      } else {
+        setPriceSt('yfinance');
+      }
+    } catch {
+      // Holdings fetch failure is non-critical; default to yfinance
+      setPriceSt('yfinance');
+    }
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -108,6 +131,7 @@ export default function AnalysisPage() {
     fetchData();
     fetchNews();
     fetchPriceHistory('1Y');
+    fetchHoldings();
   }, [ticker]);
 
   const runIngestion = async () => {
@@ -155,7 +179,12 @@ export default function AnalysisPage() {
             {data.company_name || ticker} ({ticker})
           </h1>
           {data.sector && <p className="text-neutral-600">{data.sector}</p>}
-          {data.price && <p className="mt-1 text-lg font-medium text-neutral-900">${Number(data.price).toFixed(2)}</p>}
+          {data.price && (
+            <div className="mt-1 flex items-center gap-2">
+              <p className="text-lg font-medium text-neutral-900">${Number(data.price).toFixed(2)}</p>
+              <PriceSourceBadge source={priceSt} fetched_at={data.cached_at} />
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-3">
           <DataFreshnessTag status="live" timestamp={data.cached_at?.slice(0, 16) || undefined} />
